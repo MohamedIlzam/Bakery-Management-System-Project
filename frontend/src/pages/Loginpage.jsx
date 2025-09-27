@@ -80,7 +80,7 @@ export default function LoginPage() {
                   onClick={handleSubmit}
                   className="login-button"
                 >
-                  Log in
+                  Log In
                 </button>
               </div>
             </div>
