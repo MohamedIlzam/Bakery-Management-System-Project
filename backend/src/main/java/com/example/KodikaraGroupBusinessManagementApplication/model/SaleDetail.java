@@ -1,16 +1,20 @@
 package com.example.KodikaraGroupBusinessManagementApplication.model;
 
-
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "sale_detail")
+@NoArgsConstructor
+@AllArgsConstructor
+
 public class SaleDetail {
     @Id
-    @Column(name="sdetail_id", length = 10)
-    private String saleId;
+    @Column(name="sdetail_id", columnDefinition = "CHAR(10)")
+    private String sdetailId;
 
     @ManyToOne
     @JoinColumn(name = "sale_id",nullable = false)
@@ -24,14 +28,14 @@ public class SaleDetail {
     private int qty;
     @Column(name = "unit_price", precision = 10, scale = 2,nullable = false)
     private BigDecimal unitPrice;
-    @Column(name = "sub_tot",precision = 10, scale = 2, nullable = false)
+    @Column(name = "subtot",precision = 10, scale = 2, nullable = false)
     private BigDecimal subTot;
 
     public String getSaleId() {
-        return saleId;
+        return sdetailId;
     }
     public void setSaleId(String saleId) {
-        this.saleId = saleId;
+        this.sdetailId = saleId;
     }
     public Sale getSale() {
         return sale;
@@ -64,8 +68,7 @@ public class SaleDetail {
         this.subTot = subTot;
     }
 
-
-
-
-
+    public void setSdetailId(String sdetailId) {
+        this.sdetailId = sdetailId;
+    }
 }
