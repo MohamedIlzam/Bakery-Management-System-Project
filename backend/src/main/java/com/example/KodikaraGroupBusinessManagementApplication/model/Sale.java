@@ -1,16 +1,27 @@
 package com.example.KodikaraGroupBusinessManagementApplication.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
+
+@Getter
+@Setter
 @Entity
 @Table(name = "Sale")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Sale {
     @Id
-    @Column(name = "sale_id", length=10)
+    @Column(name = "sale_id", columnDefinition = "CHAR(10)")
     private String saleId;
 
     @ManyToOne
@@ -25,6 +36,7 @@ public class Sale {
     @JoinColumn(name="user_id")
     private User user;
 
+    @CreationTimestamp
     @Column(name="date")
     private LocalDate date;
     @Column(name="tot_amount",precision = 10,scale = 2,nullable = false)
@@ -33,6 +45,9 @@ public class Sale {
     private String paymentMethod;
     @OneToMany(mappedBy = "sale",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<SaleDetail> saleDetails;
+    @CreationTimestamp
+//    @Column(name = "date", nullable = false, updatable = false)
+//    private LocalDateTime saleDate;
 
     public String getSaleId() {
         return saleId;
@@ -43,11 +58,9 @@ public class Sale {
     public Shop getShop() {
         return shop;
     }
-
     public void setShop(Shop shop) {
         this.shop = shop;
     }
-
     public Vehicle getVehicle() {
         return vehicle;
     }
@@ -59,12 +72,6 @@ public class Sale {
     }
     public void setUser(User user) {
         this.user = user;
-    }
-    public LocalDate getDate() {
-        return date;
-    }
-    public void setDate(LocalDate date) {
-        this.date = date;
     }
     public BigDecimal getTotalAmount() {
         return totalAmount;
@@ -84,7 +91,34 @@ public class Sale {
     public void setSaleDetails(List<SaleDetail> saleDetails) {
         this.saleDetails = saleDetails;
     }
-
-
-
+    public void setDate(LocalDate now) {
+        this.date = now;
+    }
+    public Object getSaleDate() {
+        return date;
+    }
+    public void setSaleDate(LocalDate now) {
+        this.date = now;
+    }
 }
+
+
+
+
+
+
+
+
+//CREATE TABLE sale(
+//        sale_id CHAR(10) NOT NULL,
+//shop_id CHAR(7),
+//vehicle_id CHAR(7),
+//date DATE,
+//tot_amount DECIMAL(10,2) NOT NULL,
+//payment_method varchar(20) NOT NULL,
+//PRIMARY KEY (sale_id),
+//FOREIGN KEY (shop_id) REFERENCES shop(shop_id) ON DELETE CASCADE,
+//FOREIGN KEY (vehicle_id) REFERENCES vehicle(vehicle_id) ON DELETE CASCADE);
+//ALTER TABLE sale
+//ADD user_id VARCHAR(15),
+//ADD CONSTRAINT fk_sale_user FOREIGN KEY (user_id) REFERENCES user(user_id);
