@@ -22,7 +22,7 @@ public class Driver {
     public String getId() {
         return driverId;
     }
-    public String getgetDriverNameName() {
+    public String getName() {
         return name;
     }
 }

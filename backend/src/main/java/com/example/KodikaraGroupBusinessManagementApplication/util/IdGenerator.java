@@ -1,4 +1,4 @@
-package com.example.KodikaraGroupBusinessManagementApplication.services;
+package com.example.KodikaraGroupBusinessManagementApplication.util;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -17,6 +17,10 @@ public class IdGenerator {
                 return "SHOP" + String.format("%06d", shopCounter.incrementAndGet());
             case "VEH":
                 return "VEH" + String.format("%06d", vehicleCounter.incrementAndGet());
+            case "SDETA":
+                return "SDETA" + String.format("%06d", detailCounter.incrementAndGet());
+            case "DRV":
+                return "DRV" + String.format("%06d", userCounter.incrementAndGet());
             default:
                 return prefix + String.format("%06d", System.currentTimeMillis() % 1000000);
         }
@@ -26,4 +30,7 @@ public class IdGenerator {
         return generate("SALE");
     }
 
+    public static String saleDetailId() {
+        return generate("SDETA");
+    }
 }
