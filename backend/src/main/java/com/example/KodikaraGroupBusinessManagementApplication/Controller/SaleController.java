@@ -2,6 +2,7 @@ package com.example.KodikaraGroupBusinessManagementApplication.Controller;
 
 import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleRequestDTO;
 import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleResponseDTO;
+import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleUpdateDTO;
 import com.example.KodikaraGroupBusinessManagementApplication.services.SaleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +52,13 @@ public class SaleController {
     public ResponseEntity<List<SaleResponseDTO>> getSaleByDateRange(@RequestParam @DateTimeFormat(iso =DateTimeFormat.ISO.DATE) LocalDate startDate,
                                                                     @RequestParam @DateTimeFormat(iso =DateTimeFormat.ISO.DATE) LocalDate endDate){
         return ResponseEntity.ok(saleService.getSaleByDateRange(startDate, endDate));
+    }
+    @PutMapping("/{id}") // A general-purpose update
+    public ResponseEntity<SaleResponseDTO> updateSale(
+            @PathVariable String id,
+            @Valid @RequestBody SaleUpdateDTO dto) {
+        SaleResponseDTO response = saleService.updateSale(id, dto);
+        return ResponseEntity.ok(response);
     }
     @DeleteMapping("/by-date")
     public ResponseEntity<Void> deleteSaleByDate(@RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE)LocalDate date) {

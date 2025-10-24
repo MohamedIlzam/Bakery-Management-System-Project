@@ -22,7 +22,8 @@ public class User {
 
 //    @Column(name = "full_name", length = 100, nullable = false)
 //    private String fullName;
-
+@Column(name = "password", length = 20, nullable = false)
+private String password;
     @Column(name = "role", length = 20, nullable = false)
     private String role;
 
@@ -58,6 +59,14 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }
 

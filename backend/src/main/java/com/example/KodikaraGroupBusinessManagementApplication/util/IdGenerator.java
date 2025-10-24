@@ -18,7 +18,7 @@ public class IdGenerator {
             case "VEH":
                 return "VEH" + String.format("%06d", vehicleCounter.incrementAndGet());
             case "SDETA":
-                return "SDETA" + String.format("%06d", detailCounter.incrementAndGet());
+                return "SDET" + String.format("%06d", detailCounter.incrementAndGet());
             case "DRV":
                 return "DRV" + String.format("%06d", userCounter.incrementAndGet());
             default:

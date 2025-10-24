@@ -47,7 +47,7 @@ public class Sale {
     private BigDecimal totalAmount;
     @Column(name = "payment_method", length = 20, nullable = false)
     private String paymentMethod;
-    @OneToMany(mappedBy = "sale",cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "sale",cascade = CascadeType.ALL)
     private List<SaleDetail> saleDetails;
     @CreationTimestamp
 //    @Column(name = "date", nullable = false, updatable = false)

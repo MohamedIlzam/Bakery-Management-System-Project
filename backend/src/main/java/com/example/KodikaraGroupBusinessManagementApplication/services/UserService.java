@@ -20,6 +20,13 @@ public class UserService {
         if (user == null) {
             return new LoginResponse(false, "User not found");
         }
+        if (user.getPassword().equals(loginRequest.getPassword())) {
+            // Passwords match! Return a success response.
+            return new LoginResponse(true, "Login successful!");
+        } else {
+            // Passwords do not match.
+            return new LoginResponse(false, "Invalid credentials");
+        }
     }
 
 }

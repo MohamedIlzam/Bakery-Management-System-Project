@@ -1,9 +1,6 @@
 package com.example.KodikaraGroupBusinessManagementApplication.services;
 
-import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleDTO;
-import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleItemResponse;
-import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleRequestDTO;
-import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleResponseDTO;
+import com.example.KodikaraGroupBusinessManagementApplication.DTO.*;
 import com.example.KodikaraGroupBusinessManagementApplication.Repo.*;
 import com.example.KodikaraGroupBusinessManagementApplication.exception.ResourceNotFoundException;
 import com.example.KodikaraGroupBusinessManagementApplication.model.*;
@@ -84,6 +81,7 @@ import java.util.List;
                     detail.setUnitPrice(item.getPrice());
 
                     BigDecimal subtotal = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+                    detail.setSubTot(subtotal);
                     totalAmount = totalAmount.add(subtotal);
 
                     saleDetails.add(detail);
@@ -234,5 +232,61 @@ import java.util.List;
                 response.add(convertToResponseDTO(sale));
             }
             return response;
+        }
+
+        @Transactional
+        @Override
+        public SaleResponseDTO updateSale(String saleId, SaleUpdateDTO dto){
+            Sale sale = saleRepository.findById(saleId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Sale not found: " + saleId));
+            dto.getPaymentMethod().ifPresent(sale::setPaymentMethod);
+            dto.getSaleDate().ifPresent(sale::setSaleDate);
+
+            dto.getShopName().ifPresent(shopName -> {
+                Shop shop = shopRepository.findByShopName(shopName)
+                        .orElseThrow(() -> new ResourceNotFoundException("Shop not found: "+ shopName));
+                sale.setShop(shop);
+            });
+
+            dto.getVehicleNo().ifPresent(vehicleNo -> {
+                Vehicle vehicle =vehicleRepository.findByVehicleNo(vehicleNo)
+                        .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found: "+ vehicleNo));
+                sale.setVehicle(vehicle);
+            });
+            dto.getDriverName().ifPresent(driverName -> {
+                Driver driver =driverRepository.findByName(driverName)
+                        .orElseThrow(() -> new ResourceNotFoundException("Driver not found: "+ driverName));
+                sale.setDriver(driver);
+            });
+            dto.getItems().ifPresent(newItemsList -> {
+                BigDecimal newTotalAmount = BigDecimal.ZERO;
+                saleDetailRepository.deleteAll(sale.getSaleDetails());
+                List<SaleDetail> newDetails = new ArrayList<>();
+                for(SaleDTO item : newItemsList){
+                    Product product = productRepository.findByName(item.getProductName())
+                            .orElseThrow(() -> new ResourceNotFoundException("Product not found: "+ item.getProductName()));
+
+                    SaleDetail detail = new SaleDetail();
+                    detail.setSdetailId(IdGenerator.saleDetailId());
+                    detail.setSale(sale);
+                    detail.setProduct(product);
+                    detail.setQty(item.getQuantity());
+                    detail.setUnitPrice(item.getPrice());
+
+                    BigDecimal subtotal= item.getPrice().multiply(new BigDecimal(item.getQuantity()));
+                    detail.setSubTot(subtotal);
+                    newTotalAmount = newTotalAmount.add(subtotal);
+
+                    newDetails.add(detail);
+                }
+
+                sale.setSaleDetails(newDetails);
+                sale.setTotalAmount(newTotalAmount);
+            });
+
+            Sale updatedSale = saleRepository.save(sale);
+
+            return convertToResponseDTO(updatedSale);
+
         }
     }
