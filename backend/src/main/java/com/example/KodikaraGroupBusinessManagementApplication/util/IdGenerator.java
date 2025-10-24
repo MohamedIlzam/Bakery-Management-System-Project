@@ -17,7 +17,7 @@ public class IdGenerator {
                 return "SHOP" + String.format("%06d", shopCounter.incrementAndGet());
             case "VEH":
                 return "VEH" + String.format("%06d", vehicleCounter.incrementAndGet());
-            case "SDETA":
+            case "SDET":
                 return "SDET" + String.format("%06d", detailCounter.incrementAndGet());
             case "DRV":
                 return "DRV" + String.format("%06d", userCounter.incrementAndGet());
@@ -31,6 +31,6 @@ public class IdGenerator {
     }
 
     public static String saleDetailId() {
-        return generate("SDETA");
+        return generate("SDET");
     }
 }
