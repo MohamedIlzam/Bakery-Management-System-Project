@@ -3,6 +3,7 @@ package com.example.KodikaraGroupBusinessManagementApplication.Controller;
 import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleRequestDTO;
 import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleResponseDTO;
 import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleUpdateDTO;
+
 import com.example.KodikaraGroupBusinessManagementApplication.services.SaleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +54,7 @@ public class SaleController {
                                                                     @RequestParam @DateTimeFormat(iso =DateTimeFormat.ISO.DATE) LocalDate endDate){
         return ResponseEntity.ok(saleService.getSaleByDateRange(startDate, endDate));
     }
-    @PutMapping("/{id}") // A general-purpose update
+    @PutMapping("/{id}") 
     public ResponseEntity<SaleResponseDTO> updateSale(
             @PathVariable String id,
             @Valid @RequestBody SaleUpdateDTO dto) {

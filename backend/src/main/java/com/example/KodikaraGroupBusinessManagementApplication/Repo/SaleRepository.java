@@ -4,6 +4,7 @@ import com.example.KodikaraGroupBusinessManagementApplication.model.Sale;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -23,5 +24,12 @@ public interface SaleRepository extends JpaRepository<Sale,String> {
 
     @Query("SELECT s FROM Sale s WHERE s.shop.shopId = :shopId")
     List<Sale> findByShop(@Param("shopId") String shopId);
+    List<Sale> findByDate(LocalDate date);
+
+    List<Sale> findByDateBetween(LocalDate startDate, LocalDate endDate);
+
+    void deleteByDate(LocalDate date);
+
+    boolean existsByDate(LocalDate date);
 
 }

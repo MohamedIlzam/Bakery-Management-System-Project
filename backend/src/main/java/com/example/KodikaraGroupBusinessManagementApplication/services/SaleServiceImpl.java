@@ -7,6 +7,16 @@ import com.example.KodikaraGroupBusinessManagementApplication.model.*;
 import com.example.KodikaraGroupBusinessManagementApplication.util.IdGenerator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleDTO;
+import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleItemResponse;
+import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleRequestDTO;
+import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleResponseDTO;
+import com.example.KodikaraGroupBusinessManagementApplication.Repo.*;
+import com.example.KodikaraGroupBusinessManagementApplication.exception.ResourceNotFoundException;
+import com.example.KodikaraGroupBusinessManagementApplication.model.*;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 
@@ -16,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+    @Service
     @RequiredArgsConstructor
     public class SaleServiceImpl implements SaleService {
 
@@ -71,8 +82,6 @@ import java.util.List;
                 for (SaleDTO item : dto.getItems()) {
                     Product product = productRepository.findByName(item.getProductName())
                             .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + item.getProductName()));
-//                    BigDecimal subtotal = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-//                    totalAmount = totalAmount.add(subtotal);
                     SaleDetail detail = new SaleDetail();
                     detail.setSdetailId(IdGenerator.saleDetailId());
                     detail.setSale(sale);
@@ -100,6 +109,30 @@ import java.util.List;
                     ));
                 }
 
+                BigDecimal totalAmount = BigDecimal.ZERO;
+                List<SaleResponseDTO> responseItems = new ArrayList<>();
+
+                for (SaleDTO item : dto.getItems()) {
+                    BigDecimal subtotal = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+                    totalAmount = totalAmount.add(subtotal);
+
+                    responseItems.add(new SaleResponseDTO(
+                            item.getProductName(),
+                            item.getQuantity(),
+                            subtotal
+                    ));
+                }
+                Sale sale = new Sale();
+                sale.setSaleId(IdGenerator.saleId());
+                sale.setShop(shop);
+                sale.setVehicle(vehicle);
+                sale.setSaleDate(LocalDate.now());
+                sale.setTotalAmount(totalAmount);
+                sale.setPaymentMethod("CASH");
+
+
+                Sale savedSale = saleRepository.save(sale);
+
 
                 return new SaleResponseDTO(
                         savedSale.getSaleId(),
@@ -111,6 +144,10 @@ import java.util.List;
                         responseItems,
                         totalAmount,
                         (LocalDate) savedSale.getSaleDate()
+                        vehicle.getDriverName(),
+                        vehicle.getVehicleNo(),
+                        totalAmount,
+                        savedSale.getSaleDate()
                 );
 
             } catch (Exception e) {
@@ -139,6 +176,22 @@ import java.util.List;
 //            } catch (Exception e) {
 //                throw new RuntimeException("Error retrieving sale: " + e.getMessage());
 //            }
+
+            try {
+
+                return new SaleResponseDTO(
+                        sale.getSaleId(),
+                        sale.getShop().getShopName(),
+                        sale.getShop().getOwnerName(),
+                        sale.getShop().getContactNo(),
+                        sale.getVehicle().getDriverName(),
+                        sale.getVehicle().getVehicleNo(),
+                        sale.getTotalAmount(),
+                        sale.getSaleDate()
+                );
+            } catch (Exception e) {
+                throw new RuntimeException("Error retrieving sale: " + e.getMessage());
+            }
         }
 
         @Override
@@ -163,6 +216,24 @@ import java.util.List;
 //
 //            return responses;
             return convertToResponseDTOList(sales);
+            List<SaleResponseDTO> responses = new ArrayList<>();
+
+            for (Sale sale : sales) {
+                {
+                    responses.add(new SaleResponseDTO(
+                            sale.getSaleId(),
+                            sale.getShop().getShopName(),
+                            sale.getShop().getOwnerName(),
+                            sale.getShop().getContactNo(),
+                            sale.getVehicle().getDriverName(),
+                            sale.getVehicle().getVehicleNo(),
+                            sale.getTotalAmount(),
+                            sale.getSaleDate()
+                    ));
+                }
+            }
+
+            return responses;
         }
 
         @Override
@@ -177,12 +248,17 @@ import java.util.List;
             List<Sale> sales = saleRepository.findBySaleDate(saleDate);
             if(sales.isEmpty()){
                 throw new ResourceNotFoundException("Sale not found: "+saleDate);
+        public List<SaleResponseDTO> getSaleByDate(LocalDate date){
+            List<Sale> sales = saleRepository.findByDate(date);
+            if(sales.isEmpty()){
+                throw new ResourceNotFoundException("Sale not found: "+date);
             }
             return convertToResponseDTOList(sales);
         }
         @Override
         public List<SaleResponseDTO> getSaleByDateRange(LocalDate startDate,LocalDate endDate){
             List<Sale> sales =saleRepository.findBySaleDateBetween(startDate,endDate);
+            List<Sale> sales =saleRepository.findByDateBetween(startDate,endDate);
             if(sales.isEmpty()){
                 throw new ResourceNotFoundException("Sale not found between: "+startDate+" "+ endDate+" ");
             }
@@ -195,6 +271,11 @@ import java.util.List;
                 throw new ResourceNotFoundException("Sale not found: "+saleDate);
             }
             saleRepository.deleteBySaleDate(saleDate);
+        public void deleteSaleByDate(LocalDate date){
+            if(!saleRepository.existsByDate(date)){
+                throw new ResourceNotFoundException("Sale not found: "+date);
+            }
+            saleRepository.deleteByDate(date);
         }
         private SaleResponseDTO convertToResponseDTO(Sale sale){
             List<SaleItemResponse> items =new ArrayList<>();
@@ -227,6 +308,27 @@ import java.util.List;
             );
         }
         public List<SaleResponseDTO> convertToResponseDTOList(List<Sale> sales){
+                for(SaleDetail detail : sale.getSaleDetails()){
+                    items.add(new SaleItemResponse(
+                            detail.getProduct().getName(), 
+                            detail.getQty(),
+                            detail.getSubTot()
+                    ));
+                }
+            }
+            return new SaleResponseDTO(
+                    sale.getSaleId(),
+                    sale.getShop().getShopName(),
+                    sale.getShop().getOwnerName(),
+                    sale.getShop().getContactNo(),
+                    sale.getVehicle().getVehicleNo(),
+                    sale.getVehicle().getDriverName(),
+                    items,
+                    sale.getTotalAmount(),
+                    sale.getSaleDate()
+            );
+        }
+        private List<SaleResponseDTO> convertToResponseDTOList(List<Sale> sales){
             List<SaleResponseDTO> response=new ArrayList<>();
             for(Sale sale : sales){
                 response.add(convertToResponseDTO(sale));

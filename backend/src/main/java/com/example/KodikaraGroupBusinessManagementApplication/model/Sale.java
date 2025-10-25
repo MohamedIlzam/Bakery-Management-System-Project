@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import jakarta.persistence.Column;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -43,6 +44,9 @@ public class Sale {
     @CreationTimestamp
     @Column(name = "saleDate")
     private LocalDate saleDate;
+    @CreationTimestamp
+    @Column(name="date")
+    private LocalDate date;
     @Column(name="tot_amount",precision = 10,scale = 2,nullable = false)
     private BigDecimal totalAmount;
     @Column(name = "payment_method", length = 20, nullable = false)
@@ -50,9 +54,6 @@ public class Sale {
     @OneToMany(mappedBy = "sale",cascade = CascadeType.ALL)
     private List<SaleDetail> saleDetails;
     @CreationTimestamp
-//    @Column(name = "date", nullable = false, updatable = false)
-//    private LocalDateTime saleDate;
-
     public String getSaleId() {
         return saleId;
     }
@@ -109,6 +110,13 @@ public class Sale {
     }
     public void setDriver(){
         this.driver=driver;
+        this.date = now;
+    }
+    public Object getSaleDate() {
+        return date;
+    }
+    public void setSaleDate(LocalDate now) {
+        this.date = now;
     }
 }
 

@@ -21,4 +21,5 @@ public interface SaleService {
     @Transactional
     SaleResponseDTO updateSale(String saleId, SaleUpdateDTO dto);
     List<SaleResponseDTO> convertToResponseDTOList(List<Sale> sales);
+
 }
