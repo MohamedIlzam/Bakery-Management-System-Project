@@ -22,7 +22,7 @@ public class MonthlyReport {
     @Column(name = "mreport_id",columnDefinition = "CHAR(10)")
     private String mreportId;
 
-   @Column(name ="mreport_date",/*precision = 7*/columnDefinition = "CHAR(7)", nullable = false,unique = true)
+   @Column(name ="mreport_date",columnDefinition = "CHAR(7)", nullable = false,unique = true)
     private String mreportDate;
     @Column(name = "mtotal_sales",precision=15,scale = 2, nullable = false)
     private BigDecimal mtotalSales;
@@ -30,7 +30,8 @@ public class MonthlyReport {
     private int mtotalTransac;
 
     @CreationTimestamp
-    //@Column(name = "genarated_on",columnDefinition ="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    @Column(name = "generated_on",columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime generatedOn;
     @Column(name = "generated_on",columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime genaratedOn;
 
@@ -59,6 +60,13 @@ public class MonthlyReport {
         this.mtotalTransac = mtotalTransac;
     }
 
+    public LocalDateTime getGeneratedOn() {
+        return generatedOn;
+    }
+
+    public void setGeneratedOn(LocalDateTime generatedOn) {
+        this.generatedOn = generatedOn;
+    }
 }
 
 

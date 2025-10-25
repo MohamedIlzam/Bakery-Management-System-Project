@@ -10,12 +10,12 @@ import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, String> {
-    default Optional<Product> findByName(String name) // Fixed method name
+
+     Optional<Product> findByName(String name);
+
+    default Optional<Product> findByName(String name) 
     {
         return null;
     }
 
-//    default Optional<Object> findByName(String name) {
-//        return null;
-//    }
 }
