@@ -226,7 +226,7 @@ import java.util.List;
                     (LocalDate) sale.getSaleDate()
             );
         }
-        private List<SaleResponseDTO> convertToResponseDTOList(List<Sale> sales){
+        public List<SaleResponseDTO> convertToResponseDTOList(List<Sale> sales){
             List<SaleResponseDTO> response=new ArrayList<>();
             for(Sale sale : sales){
                 response.add(convertToResponseDTO(sale));

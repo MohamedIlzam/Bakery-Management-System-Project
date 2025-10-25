@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 
 import java.math.BigDecimal;
@@ -32,6 +33,7 @@ public class DailyReport {
     private BigDecimal dtotalSales;
     @Column(name = "dtotal_transac", nullable = false)
     private int dtotalTransac;
+    @CreationTimestamp
     @Column(name = "generated_on",columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime generatedOn;
 

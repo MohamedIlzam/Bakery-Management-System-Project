@@ -30,9 +30,8 @@ public class MonthlyReport {
     private int mtotalTransac;
 
     @CreationTimestamp
-    //@Column(name = "genarated_on",columnDefinition ="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     @Column(name = "generated_on",columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime genaratedOn;
+    private LocalDateTime generatedOn;
 
     public String getMreportId() {
         return mreportId;
@@ -59,6 +58,13 @@ public class MonthlyReport {
         this.mtotalTransac = mtotalTransac;
     }
 
+    public LocalDateTime getGeneratedOn() {
+        return generatedOn;
+    }
+
+    public void setGeneratedOn(LocalDateTime generatedOn) {
+        this.generatedOn = generatedOn;
+    }
 }
 
 

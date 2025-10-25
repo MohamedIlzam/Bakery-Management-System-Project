@@ -3,6 +3,7 @@ package com.example.KodikaraGroupBusinessManagementApplication.services;
 import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleRequestDTO;
 import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleResponseDTO;
 import com.example.KodikaraGroupBusinessManagementApplication.DTO.SaleUpdateDTO;
+import com.example.KodikaraGroupBusinessManagementApplication.model.Sale;
 import jakarta.transaction.Transactional;
 
 import java.time.LocalDate;
@@ -19,4 +20,5 @@ public interface SaleService {
     void deleteSaleByDate(LocalDate date);
     @Transactional
     SaleResponseDTO updateSale(String saleId, SaleUpdateDTO dto);
+    List<SaleResponseDTO> convertToResponseDTOList(List<Sale> sales);
 }
