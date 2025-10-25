@@ -7,5 +7,12 @@ import java.util.List;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, String> {
-    List<Product> findAllByActiveTrue();
+
+     Optional<Product> findByName(String name);
+
+    default Optional<Product> findByName(String name) 
+    {
+        return null;
+    }
+
 }

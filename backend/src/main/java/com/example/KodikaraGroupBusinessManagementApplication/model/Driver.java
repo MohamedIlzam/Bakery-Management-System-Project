@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 public class Driver {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     @Column(name = "driver_id",columnDefinition = "CHAR()")
     private String driverId;
     @Column(name = "dname",nullable = false)
@@ -22,6 +23,7 @@ public class Driver {
     public String getId() {
         return driverId;
     }
+    public String getName() {
     public String getgetDriverNameName() {
         return name;
     }
