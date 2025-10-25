@@ -37,12 +37,15 @@ public class Sale {
     private User user;
 
     @CreationTimestamp
-    @Column(name="date")
+    @Column(name="sale_date")
     private LocalDate date;
+
     @Column(name="tot_amount",precision = 10,scale = 2,nullable = false)
     private BigDecimal totalAmount;
+
     @Column(name = "payment_method", length = 20, nullable = false)
     private String paymentMethod;
+
     @OneToMany(mappedBy = "sale",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<SaleDetail> saleDetails;
     @CreationTimestamp
