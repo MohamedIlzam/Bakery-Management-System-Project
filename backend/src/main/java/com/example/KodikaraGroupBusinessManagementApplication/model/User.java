@@ -17,14 +17,10 @@ public class User {
     @Column(name = "username", length = 50, nullable = false, unique = true)
     private String username;
 
-@Column(name = "password", length = 20, nullable = false)
-private String password;
+    @Column(name = "password", length = 20, nullable = false)
+    private String password;
     @Column(name = "role", length = 20, nullable = false)
     private String role;
-
-    @Column(name = "role", length = 20, nullable = false)
-    private String role;
-
     public String getUserId() {
         return userId;
     }
@@ -49,55 +45,3 @@ private String password;
         this.password = password;
     }
 }
-
-//
-//    @Column(name = "email", length = 100, nullable = false, unique = true)
-//    private String email;
-
-//    @Column(name = "full_name", length = 100, nullable = false)
-//    private String fullName;
-//    @Column(name = "created_at")
-//    private LocalDateTime createdAt;
-
-//    public LocalDateTime getCreatedAt() {
-//        return createdAt;
-//    }
-//    public void setCreatedAt(LocalDateTime createdAt) {
-//        this.createdAt = createdAt;
-    //}
-
-
-//    public void setEmail(String email) {
-//        this.email = email;
-//    }
-
-//    public void setFullName(String fullName) {
-//        this.fullName = fullName;
-//    }
-
-
-
-//    public void setEmail(String email) {
-//        this.email = email;
-//    }
-
-//    public void setFullName(String fullName) {
-//        this.fullName = fullName;
-//    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-}
-
-
-
-
-
-//CREATE TABLE user(
-//        user_id CHAR(15) NOT NULL,
-//username VARCHAR(30) NOT NULL UNIQUE,
-//password VARCHAR(25) NOT NULL UNIQUE,
-//role VARCHAR(12) CHECK(role IN('ADMIN','DATAENTRY','DEVELOPER')) ,
-//PRIMARY KEY (user_id)
-//);
