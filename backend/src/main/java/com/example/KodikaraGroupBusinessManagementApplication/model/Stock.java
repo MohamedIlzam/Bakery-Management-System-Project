@@ -1,18 +1,39 @@
 package com.example.KodikaraGroupBusinessManagementApplication.model;
 
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "stock")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Stock {
+
     @Id
-    @Column(name = "stock_id",columnDefinition = "CHAR(7)")
-    private String stockId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "stock_id")
+    private Integer stockId;
+
+    @ManyToOne
+    @JoinColumn(name = "pro_id")
+    private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "shop_id")
+    private Shop shop;
+
+    @Column(name = "date")
+    private LocalDate date;
+
+    @Column(name = "morning_quantity")
+    private Integer morningQuantity;
+
+    @Column(name = "closing_quantity")
+    private Integer closingQuantity;
 }
 
 

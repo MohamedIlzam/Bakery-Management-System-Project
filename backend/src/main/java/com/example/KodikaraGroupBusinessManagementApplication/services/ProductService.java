@@ -1,15 +1,12 @@
 package com.example.KodikaraGroupBusinessManagementApplication.services;
 
-
-
-
+import com.example.KodikaraGroupBusinessManagementApplication.DTO.ProductDTO;
 import java.util.List;
-import java.util.stream.Collectors;
 
-
-
-public class ProductService {
-
+public interface ProductService {
+    ProductDTO create(ProductDTO dto);
+    ProductDTO update(String id, ProductDTO dto);
+    ProductDTO get(String id);
+    List<ProductDTO> listActive();
+    void softDelete(String id);
 }
-
-

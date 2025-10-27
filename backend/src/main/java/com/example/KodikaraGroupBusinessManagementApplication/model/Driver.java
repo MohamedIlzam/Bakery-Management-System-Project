@@ -7,8 +7,9 @@ import jakarta.persistence.*;
 @Table(name = "driver")
 public class Driver {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "driver_id",columnDefinition = "CHAR()")
+
+
+    @Column(name = "driver_id",columnDefinition = "CHAR(10)")
     private String driverId;
     @Column(name = "dname",nullable = false)
     private String name;
@@ -19,10 +20,10 @@ public class Driver {
     public void setName(String name) {
         this.name = name;
     }
-    public String getId() {
+    public String getDriverId() {
         return driverId;
     }
-    public String getgetDriverNameName() {
+    public String getName() {
         return name;
     }
 }

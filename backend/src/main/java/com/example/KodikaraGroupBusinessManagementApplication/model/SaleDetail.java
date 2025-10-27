@@ -2,73 +2,37 @@ package com.example.KodikaraGroupBusinessManagementApplication.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "sale_detail")
+@Getter // Use Lombok
+@Setter // Use Lombok
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class SaleDetail {
     @Id
     @Column(name="sdetail_id", columnDefinition = "CHAR(10)")
     private String sdetailId;
 
     @ManyToOne
-    @JoinColumn(name = "sale_id",nullable = false)
+    @JoinColumn(name = "sale_id", nullable = false)
     private Sale sale;
 
     @ManyToOne
-    @JoinColumn(name="pro_id",nullable = false)
+    @JoinColumn(name="pro_id", nullable = false)
     private Product product;
 
-    @Column(name="qty",nullable = false)
+    @Column(name="qty", nullable = false)
     private int qty;
-    @Column(name = "unit_price", precision = 10, scale = 2,nullable = false)
+
+    @Column(name = "unit_price", precision = 10, scale = 2, nullable = false)
     private BigDecimal unitPrice;
-    @Column(name = "subtot",precision = 10, scale = 2, nullable = false)
+
+    @Column(name = "subtot", precision = 10, scale = 2, nullable = false)
     private BigDecimal subTot;
-
-    public String getSaleId() {
-        return sdetailId;
-    }
-    public void setSaleId(String saleId) {
-        this.sdetailId = saleId;
-    }
-    public Sale getSale() {
-        return sale;
-    }
-    public void setSale(Sale sale) {
-        this.sale = sale;
-    }
-    public Product getProduct() {
-        return product;
-    }
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-    public int getQty() {
-        return qty;
-    }
-    public void setQty(int qty) {
-        this.qty = qty;
-    }
-    public BigDecimal getUnitPrice() {
-        return unitPrice;
-    }
-    public void setUnitPrice(BigDecimal unitPrice) {
-        this.unitPrice = unitPrice;
-    }
-    public BigDecimal getSubTot() {
-        return subTot;
-    }
-    public void setSubTot(BigDecimal subTot) {
-        this.subTot = subTot;
-    }
-
-    public void setSdetailId(String sdetailId) {
-        this.sdetailId = sdetailId;
-    }
 }
