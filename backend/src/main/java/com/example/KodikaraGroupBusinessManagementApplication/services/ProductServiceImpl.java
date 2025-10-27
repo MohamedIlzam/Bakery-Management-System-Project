@@ -4,9 +4,10 @@ import com.example.KodikaraGroupBusinessManagementApplication.DTO.ProductDTO;
 import com.example.KodikaraGroupBusinessManagementApplication.Repo.ProductRepository;
 import com.example.KodikaraGroupBusinessManagementApplication.exception.ResourceNotFoundException;
 import com.example.KodikaraGroupBusinessManagementApplication.model.Product;
+import com.example.KodikaraGroupBusinessManagementApplication.util.IdGenerator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.stream.Collectors;
 import java.util.List;
 
 @Service
@@ -21,11 +22,16 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDTO create(ProductDTO dto) {
-        if (repo.existsById(dto.getProId())) {
-            throw new IllegalArgumentException("Product already exists: " + dto.getProId());
+        if (repo.findByName(dto.getName()).isPresent()) {
+            throw new IllegalArgumentException("Product already exists with name: " + dto.getName());
         }
+
         Product p = toEntity(dto);
-        p.setActive(true); // soft-delete default
+
+        p.setProId(IdGenerator.productId());
+        p.setActive(true);
+        p.setStatus("Available");
+
         return toDto(repo.save(p));
     }
 
@@ -48,7 +54,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductDTO> listActive() {
-        return repo.findAllByActiveTrue().stream().map(this::toDto).toList();
+        // FIX: Add .stream() and .collect() to convert to List
+        return repo.findAllByActiveTrue().stream().map(this::toDto).collect(Collectors.toList());
     }
 
     @Override
@@ -61,7 +68,7 @@ public class ProductServiceImpl implements ProductService {
     // -------- mapping helpers --------
     private Product toEntity(ProductDTO d) {
         Product p = new Product();
-        p.setProId(d.getProId());
+        // FIX: Do NOT set ProId here. It's set in create()
         p.setName(d.getName());
         p.setCategory(d.getCategory());
         p.setUnitPrice(d.getUnitPrice());

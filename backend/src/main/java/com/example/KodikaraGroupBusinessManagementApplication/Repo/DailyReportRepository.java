@@ -8,6 +8,6 @@ import java.time.LocalDate;
 import java.util.List;
 @Repository
 public interface DailyReportRepository extends JpaRepository<DailyReport,String> {
-      List<DailyReport> findByDreportDate(LocalDate dreportDate);
-      boolean existsByDreportDate(LocalDate dreportDate);
+    List<DailyReport> findByDreportDate(LocalDate dreportDate);
+    boolean existsByDreportDate(LocalDate dreportDate);
 }

@@ -5,8 +5,8 @@ import java.math.BigDecimal;
 
 @Data
 public class SaleDTO {
-    private String ProductName;
-    private int Quantity;
-    private BigDecimal Price;
 
+    private String productName;
+    private int quantity;
+    private BigDecimal price;
 }

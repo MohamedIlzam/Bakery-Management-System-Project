@@ -1,14 +1,27 @@
 package com.example.KodikaraGroupBusinessManagementApplication.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "price_list")
+@Getter
 public class PriceList {
     @Id
-    //@Column(name = "price list id",columnDefinition ="CHAR(7)")
     @Column(name = "pricelist_id",columnDefinition = "CHAR(7)")
     private String PlistId;
+    @ManyToOne
+    @JoinColumn(name = "shop_id")
+    private Shop shop;
+
+    @ManyToOne
+    @JoinColumn(name = "pro_id")
+    private Product product;
+
+    @Column(name = "price")
+    private BigDecimal price;
 }
 
 

@@ -8,9 +8,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class FairDeliveryItemDTO {
 
-    private Long itemId;
-    private Long deliveryId;
-    private Long productId;
+    private String itemId;
+    private String deliveryId;
+    private String productId;
 
     private int qtySent;
     private int qtyRemaining;

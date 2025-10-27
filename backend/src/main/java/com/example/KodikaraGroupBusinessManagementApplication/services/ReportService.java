@@ -10,23 +10,21 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ReportService {
-    DailyReportDTO generateDaily(LocalDate date);
+    // --- Daily Report CRUD ---
+    DailyReportDTO generateDailyReport(LocalDate date);
+    List<DailyReportDTO> getDailyReportsByDate(LocalDate date);
+    DailyReportDTO getDailyReportById(String reportId);
+    void deleteDailyReport(String reportId);
 
-    DailyReportDTO getDailyReportById(String dreportId);
+    // --- Monthly Report CRUD ---
+    MonthlyReportDTO generateMonthlyReport(YearMonth yearMonth);
+    List<MonthlyReportDTO> getMonthlyReportsByMonth(YearMonth yearMonth);
+    MonthlyReportDTO getMonthlyReportById(String reportId);
+    void deleteMonthlyReport(String reportId);
 
-    List<DailyReportDTO> getReportByDate(LocalDate date);
-
-    void deleteByDate(String dreportId);
-
-    MonthlyReportDTO generateMonthly(YearMonth yearMonth);
-
-    MonthlyReportDTO getMonthlyReportById(String mreportid);
-
-    List<MonthlyReportDTO> getMonthlyReportByMonth(YearMonth yearMonth);
-
-    void deleteMonthlyReportById(String mreportid);
-    List<SaleResponseDTO> getFilterSaleData(LocalDate startDate,LocalDate endDate,
-                                            Optional<String> vehicleNo,
-                                            Optional<String> shopName,
-                                            Optional<String> driverName);
+    // --- Analytics Part (Read Filtered Sales Data) ---
+    List<SaleResponseDTO> getFilteredSalesData(LocalDate startDate, LocalDate endDate,
+                                               Optional<String> vehicleNo,
+                                               Optional<String> shopName,
+                                               Optional<String> driverName);
 }

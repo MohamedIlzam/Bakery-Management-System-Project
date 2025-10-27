@@ -4,12 +4,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import jakarta.persistence.Column;
 
 @Entity
 @Table(name = "product")
 public class Product {
 
     @Id
+    @Column(name = "pro_id", columnDefinition = "CHAR(7)")
     private String proId;
 
     private String name;

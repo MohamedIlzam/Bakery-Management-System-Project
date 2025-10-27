@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,6 +31,7 @@ public class StockService {
     }
 
     public StockEntryDTO saveDailyStock(StockEntryDTO stockEntryDTO) {
+        // FIX: Use the variable 'stockEntryDTO' (lowercase 's')
         Product product = productRepository.findById(stockEntryDTO.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + stockEntryDTO.getProductId()));
         Shop shop = shopRepository.findById(stockEntryDTO.getShopId())
@@ -43,10 +43,12 @@ public class StockService {
         Stock stock;
         if (existingStock.isPresent()) {
             stock = existingStock.get();
+            // FIX: Use the variable 'stockEntryDTO' (lowercase 's')
             stock.setMorningQuantity(stockEntryDTO.getMorningQuantity());
             stock.setClosingQuantity(stockEntryDTO.getClosingQuantity());
         } else {
             stock = new Stock();
+            // FIX: Use the variable 'stockEntryDTO' (lowercase 's')
             stock.setDate(stockEntryDTO.getDate());
             stock.setProduct(product);
             stock.setShop(shop);
@@ -54,11 +56,12 @@ public class StockService {
             stock.setClosingQuantity(stockEntryDTO.getClosingQuantity());
         }
         stockRepository.save(stock);
-        return stockEntryDTO; // Return the DTO as is for now
+        // FIX: Return the variable 'stockEntryDTO', not the class 'StockEntryDTO'
+        return stockEntryDTO;
     }
 
     @Transactional(readOnly = true)
-    public List<StockReportDTO> getDailyStockReport(Integer shopId, LocalDate date) {
+    public List<StockReportDTO> getDailyStockReport(String shopId, LocalDate date) {
         Shop shop = shopRepository.findById(shopId)
                 .orElseThrow(() -> new ResourceNotFoundException("Shop not found with ID: " + shopId));
 
@@ -76,17 +79,23 @@ public class StockService {
             Integer stockSold = morningQty - closingQty;
             BigDecimal income = BigDecimal.ZERO;
 
-            // Use unitPrice from Product table for income calculation
-            BigDecimal productUnitPrice = product.getUnitPrice();
-            if (productUnitPrice != null) {
-                income = productUnitPrice.multiply(BigDecimal.valueOf(stockSold));
+            // --- FIX: Correct Income Logic ---
+            Optional<PriceList> priceListEntry = priceListRepository.findByShopAndProduct(shop, product);
+
+            // Use the shop-specific price if it exists, otherwise fall back to the base product price
+            BigDecimal correctPrice = priceListEntry.map(PriceList::getPrice)
+                    .orElse(product.getUnitPrice());
+
+            if (correctPrice != null) {
+                income = correctPrice.multiply(BigDecimal.valueOf(stockSold));
             }
+            // --- END OF FIX ---
 
             return new StockReportDTO(
                     product.getProId(),
                     product.getName(),
                     shop.getShopId(),
-                    shop.getName(),
+                    shop.getShopName(), // Assuming Shop entity has getShopName()
                     date,
                     morningQty,
                     closingQty,

@@ -1,79 +1,37 @@
 package com.example.KodikaraGroupBusinessManagementApplication.model;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Setter
 @Getter
 @Entity
 @Table(name = "monthly_report")
+@NoArgsConstructor
 public class MonthlyReport {
     @Id
     @Column(name = "mreport_id",columnDefinition = "CHAR(10)")
     private String mreportId;
 
-   @Column(name ="mreport_date",columnDefinition = "CHAR(7)", nullable = false,unique = true)
-    private String mreportDate;
-    @Column(name = "mtotal_sales",precision=15,scale = 2, nullable = false)
-    private BigDecimal mtotalSales;
-    @Column(name="mtotal_transac",nullable = false)
+    @Column(name ="mreport_date", columnDefinition = "CHAR(7)", nullable = false, unique = true)
+    private String mreportDate; // e.g., "2025-10"
+
+    @Column(name = "mtotal_sales", precision=15, scale = 2, nullable = false)
+    private BigDecimal mtotalSales; // Field name is correct
+
+    @Column(name="mtotal_transac", nullable = false)
     private int mtotalTransac;
 
     @CreationTimestamp
-    @Column(name = "generated_on",columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime generatedOn;
-    @Column(name = "generated_on",columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime genaratedOn;
-
-    public String getMreportId() {
-        return mreportId;
-    }
-    public void setMreportId(String mreportId) {
-        this.mreportId = mreportId;
-    }
-    public String getMreportDate() {
-        return mreportDate;
-    }
-    public void setMreportDate(String mreportDate) {
-        this.mreportDate = mreportDate;
-    }
-    public BigDecimal getMtotalSaels() {
-        return mtotalSales;
-    }
-    public void setMtotalSaels(BigDecimal mtotalSaels) {
-        this.mtotalSales = mtotalSaels;
-    }
-    public int getMtotalTransac() {
-        return mtotalTransac;
-    }
-    public void setMtotalTransac(int mtotalTransac) {
-        this.mtotalTransac = mtotalTransac;
-    }
-
-    public LocalDateTime getGeneratedOn() {
-        return generatedOn;
-    }
-
-    public void setGeneratedOn(LocalDateTime generatedOn) {
-        this.generatedOn = generatedOn;
-    }
+    @Column(name = "generated_on", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime generatedOn; // Fixed typo "genaratedOn"
 }
-
-
-//CREATE TABLE monthly_report(
-//        mreport_id CHAR(10) NOT NULL,
-//mreport_date CHAR(7)NOT NULL UNIQUE,
-//mtotal_sales DECIMAL(15,2) NOT NULL,
-//mtotal_transac INT NOT NULL,
-//generated_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//PRIMARY KEY (mreport_id));

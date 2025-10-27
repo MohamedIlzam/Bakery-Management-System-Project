@@ -43,4 +43,7 @@ public class Vehicle {
         return driverName;
     }
 
+    public String getId() {
+        return vehicleId;
+    }
 }

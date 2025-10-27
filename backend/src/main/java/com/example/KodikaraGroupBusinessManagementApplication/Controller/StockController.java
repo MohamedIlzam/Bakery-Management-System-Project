@@ -30,7 +30,7 @@ public class StockController {
 
     @GetMapping("/{shopId}/{date}")
     public ResponseEntity<List<StockReportDTO>> getDailyStockReport(
-            @PathVariable Integer shopId,
+            @PathVariable String shopId,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         List<StockReportDTO> report = stockService.getDailyStockReport(shopId, date);
         return ResponseEntity.ok(report);

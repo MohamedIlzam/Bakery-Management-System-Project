@@ -13,7 +13,7 @@ import java.time.LocalDate;
 public class StockReportDTO {
     private String productId;
     private String productName;
-    private Integer shopId;
+    private String shopId;
     private String shopName;
     private LocalDate date;
     private Integer morningQuantity;

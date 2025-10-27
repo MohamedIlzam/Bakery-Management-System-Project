@@ -10,7 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 public class FairDeliveryDTO {
 
-    private Long deliveryId;
+    private String deliveryId;
     private String fairName;
     private LocalDate deliveryDate;
 
@@ -21,8 +21,8 @@ public class FairDeliveryDTO {
 
     private String status; // OUT or RETURNED
 
-    private Long vehicleId;
-    private Long driverId;
+    private String vehicleId;
+    private String driverId;
 
     private List<FairDeliveryItemDTO> items;
 }

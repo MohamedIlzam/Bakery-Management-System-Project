@@ -10,15 +10,15 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor 
+@AllArgsConstructor
 public class SaleResponseDTO {
     private String saleId;
     private String shopName;
-    private String ownerName;    
-    private String contactNo;     
+    private String ownerName;
+    private String contactNo;
     private String driverName;
     private String vehicleNo;
     private List<SaleItemResponse> items;
-    private BigDecimal totalAmount; 
-    private LocalDate saleDate;    
+    private BigDecimal totalAmount;
+    private LocalDate saleDate;
 }

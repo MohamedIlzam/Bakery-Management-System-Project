@@ -1,25 +1,20 @@
 package com.example.KodikaraGroupBusinessManagementApplication.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import jakarta.persistence.Column;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-
 
 @Getter
 @Setter
 @Entity
-@Table(name = "Sale")
+@Table(name = "sale")
 @NoArgsConstructor
-@AllArgsConstructor
 public class Sale {
     @Id
     @Column(name = "sale_id", columnDefinition = "CHAR(10)")
@@ -41,105 +36,15 @@ public class Sale {
     @JoinColumn(name="driver_id")
     private Driver driver;
 
-    @CreationTimestamp
-    @Column(name = "saleDate")
+    @Column(name="sale_date", nullable = false)
     private LocalDate saleDate;
-    @CreationTimestamp
-    @Column(name="sale_date")
-    private LocalDate date;
 
-    @Column(name="tot_amount",precision = 10,scale = 2,nullable = false)
+    @Column(name="tot_amount", precision = 10, scale = 2, nullable = false)
     private BigDecimal totalAmount;
 
     @Column(name = "payment_method", length = 20, nullable = false)
     private String paymentMethod;
 
-    @OneToMany(mappedBy = "sale",cascade = CascadeType.ALL,orphanRemoval = true)
-    private List<SaleDetail> saleDetails;
-    @CreationTimestamp
-    public String getSaleId() {
-        return saleId;
-    }
-    public void setSaleId(String saleId) {
-        this.saleId = saleId;
-    }
-    public Shop getShop() {
-        return shop;
-    }
-    public void setShop(Shop shop) {
-        this.shop = shop;
-    }
-    public Vehicle getVehicle() {
-        return vehicle;
-    }
-    public void setVehicle(Vehicle vehicle) {
-        this.vehicle = vehicle;
-    }
-    public User getUser() {
-        return user;
-    }
-    public void setUser(User user) {
-        this.user = user;
-    }
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-    public String getPaymentMethod() {
-        return paymentMethod;
-    }
-    public void setPaymentMethod(String paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-    public List<SaleDetail> getSaleDetails() {
-        return saleDetails;
-    }
-    public void setSaleDetails(List<SaleDetail> saleDetails) {
-        this.saleDetails = saleDetails;
-    }
-    public void setDate(LocalDate now) {
-        this.saleDate = now;
-    }
-    public Object getSaleDate() {
-        return saleDate;
-    }
-    public void setSaleDate(LocalDate now) {
-        this.saleDate = now;
-    }
-    public Driver gerDriver(){
-        return driver;
-    }
-    public void setDriver(){
-        this.driver=driver;
-        this.date = now;
-    }
-    public Object getSaleDate() {
-        return date;
-    }
-    public void setSaleDate(LocalDate now) {
-        this.date = now;
-    }
+    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL)
+    private List<SaleDetail> saleDetails = new ArrayList<>();
 }
-
-
-
-
-
-
-
-
-//CREATE TABLE sale(
-//        sale_id CHAR(10) NOT NULL,
-//shop_id CHAR(7),
-//vehicle_id CHAR(7),
-//date DATE,
-//tot_amount DECIMAL(10,2) NOT NULL,
-//payment_method varchar(20) NOT NULL,
-//PRIMARY KEY (sale_id),
-//FOREIGN KEY (shop_id) REFERENCES shop(shop_id) ON DELETE CASCADE,
-//FOREIGN KEY (vehicle_id) REFERENCES vehicle(vehicle_id) ON DELETE CASCADE);
-//ALTER TABLE sale
-//ADD user_id VARCHAR(15),
-//ADD CONSTRAINT fk_sale_user FOREIGN KEY (user_id) REFERENCES user(user_id);

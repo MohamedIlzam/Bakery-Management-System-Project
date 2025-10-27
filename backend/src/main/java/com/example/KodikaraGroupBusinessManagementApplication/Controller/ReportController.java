@@ -21,70 +21,79 @@ public class ReportController {
 
     private final ReportService reportService;
 
+    // === Daily Report CRUD ===
+
     @PostMapping("/daily")
     public ResponseEntity<DailyReportDTO> generateDailyReportForDate(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        DailyReportDTO report = reportService.generateDaily(date);
+        // Use correct service method name
+        DailyReportDTO report = reportService.generateDailyReport(date);
         return ResponseEntity.status(HttpStatus.CREATED).body(report);
     }
 
     @GetMapping("/daily")
     public ResponseEntity<List<DailyReportDTO>> getDailyReports(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        List<DailyReportDTO> reports = reportService.getReportByDate(date);
+        // Use correct service method name
+        List<DailyReportDTO> reports = reportService.getDailyReportsByDate(date);
         return ResponseEntity.ok(reports);
     }
 
     @GetMapping("/daily/{id}")
-    public ResponseEntity<DailyReportDTO> getDailyReport(@PathVariable String id) {
+    public ResponseEntity<DailyReportDTO> getDailyReportById(@PathVariable String id) {
         DailyReportDTO report = reportService.getDailyReportById(id);
         return ResponseEntity.ok(report);
     }
 
     @DeleteMapping("/daily/{id}")
     public ResponseEntity<Void> deleteDailyReport(@PathVariable String id) {
-        reportService.deleteByDate(id);
+        reportService.deleteDailyReport(id); // Use correct service method name
         return ResponseEntity.noContent().build();
     }
 
+    // === Monthly Report CRUD ===
+
     @PostMapping("/monthly")
     public ResponseEntity<MonthlyReportDTO> generateMonthlyReportForMonth(
-            @RequestParam String yearMonth) {
-
+            @RequestParam String yearMonth) { // Expecting "YYYY-MM"
         YearMonth ym = YearMonth.parse(yearMonth, DateTimeFormatter.ofPattern("yyyy-MM"));
-        MonthlyReportDTO report = reportService.generateMonthly(ym);
+        // Use correct service method name
+        MonthlyReportDTO report = reportService.generateMonthlyReport(ym);
         return ResponseEntity.status(HttpStatus.CREATED).body(report);
     }
 
     @GetMapping("/monthly")
-    public ResponseEntity<List<MonthlyReportDTO>> getMonthlyReports(
-            @RequestParam String yearMonth) {
+    public ResponseEntity<List<MonthlyReportDTO>> getMonthlyReportsByMonth(
+            @RequestParam String yearMonth) { // Expecting "YYYY-MM"
         YearMonth ym = YearMonth.parse(yearMonth, DateTimeFormatter.ofPattern("yyyy-MM"));
-        List<MonthlyReportDTO> reports = reportService.getMonthlyReportByMonth(ym);
+        // Use correct service method name
+        List<MonthlyReportDTO> reports = reportService.getMonthlyReportsByMonth(ym);
         return ResponseEntity.ok(reports);
     }
 
     @GetMapping("/monthly/{id}")
-    public ResponseEntity<MonthlyReportDTO> getMonthlyReport(@PathVariable String id) {
+    public ResponseEntity<MonthlyReportDTO> getMonthlyReportById(@PathVariable String id) {
         MonthlyReportDTO report = reportService.getMonthlyReportById(id);
         return ResponseEntity.ok(report);
     }
 
     @DeleteMapping("/monthly/{id}")
     public ResponseEntity<Void> deleteMonthlyReport(@PathVariable String id) {
-        reportService.deleteMonthlyReportById(id);
+        reportService.deleteMonthlyReport(id); // Use correct service method name
         return ResponseEntity.noContent().build();
     }
 
+    // === Analytics Endpoint ===
+
     @GetMapping("/analytics/sales-data")
-    public ResponseEntity<List<SaleResponseDTO>> getFilteredSales(
+    public ResponseEntity<List<SaleResponseDTO>> getFilteredSalesData(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) Optional<String> vehicleNo,
             @RequestParam(required = false) Optional<String> shopName,
             @RequestParam(required = false) Optional<String> driverName) {
 
-        List<SaleResponseDTO> data = reportService.getFilterSaleData(startDate, endDate, vehicleNo, shopName, driverName);
+        List<SaleResponseDTO> data = reportService.getFilteredSalesData(startDate, endDate, vehicleNo, shopName, driverName);
         return ResponseEntity.ok(data);
     }
 }

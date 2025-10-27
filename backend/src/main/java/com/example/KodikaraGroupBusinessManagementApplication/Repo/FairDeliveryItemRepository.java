@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface FairDeliveryItemRepository extends JpaRepository<FairDeliveryItem, Long> {
+public interface FairDeliveryItemRepository extends JpaRepository<FairDeliveryItem, String> {
     List<FairDeliveryItem> findByFairDelivery(FairDelivery fairDelivery);
 }
