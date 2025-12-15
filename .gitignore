@@ -1,0 +1,22 @@
+# Node.js / React
+node_modules/
+frontend/build/
+frontend/.env
+
+# Java / Spring Boot
+backend/target/
+backend/.env
+*.log
+
+# IDE settings
+.idea/
+.vscode/
+*.iml
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Other temporary files
+*.class
+*.tmp
