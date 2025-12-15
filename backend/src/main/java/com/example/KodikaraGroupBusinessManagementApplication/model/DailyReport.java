@@ -22,7 +22,7 @@ public class DailyReport {
     @Column(name="dreport_id", columnDefinition = "CHAR(10)")
     private String dreportId;
 
-    @Column(name = "dreport_date", nullable = false, unique = true) // Removed incorrect precision/scale
+    @Column(name = "dreport_date", nullable = false)//, unique = true) // Removed incorrect precision/scale
     private LocalDate dreportDate;
 
     @Column(name = "dtotal_sales", precision = 12, scale = 2, nullable = false) // Removed unique

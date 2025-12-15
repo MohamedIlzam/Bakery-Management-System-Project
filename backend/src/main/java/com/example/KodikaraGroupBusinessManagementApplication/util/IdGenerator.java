@@ -3,7 +3,7 @@ package com.example.KodikaraGroupBusinessManagementApplication.util;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IdGenerator {
-    // Existing Counters
+
     private static final AtomicLong saleCounter = new AtomicLong(0);
     private static final AtomicLong detailCounter = new AtomicLong(0);
     private static final AtomicLong shopCounter = new AtomicLong(0);
@@ -15,8 +15,13 @@ public class IdGenerator {
     private static final AtomicLong fairDeliveryCounter = new AtomicLong(0);
     private static final AtomicLong fairItemCounter = new AtomicLong(0);
     private static final AtomicLong productCounter = new AtomicLong(0);
+    private static final AtomicLong fairDeliveryReportCounter = new AtomicLong(0);
+    private static final AtomicLong shopSupplyCounter = new AtomicLong(0);
+    private static final AtomicLong shopSupplyItemCounter = new AtomicLong(0);
+    private static final AtomicLong shopSupplyReportCounter = new AtomicLong(0);
 
     public static String generate(String prefix) {
+        System.out.println("ID_GEN_DEBUG: Received prefix: '" + prefix + "'");
         switch (prefix) {
             case "SALE":
                 return "SALE" + String.format("%06d", saleCounter.incrementAndGet());
@@ -36,11 +41,32 @@ public class IdGenerator {
                 return "FDEL" + String.format("%06d", fairDeliveryCounter.incrementAndGet());
             case "FITE":
                 return "FITE" + String.format("%06d", fairItemCounter.incrementAndGet());
+            case "FREP":
+                return "FREP" + String.format("%06d", productCounter.incrementAndGet());
+            case "FDREP":
+                System.out.println("ID_GEN_DEBUG: Hit FDREP Case!");
+                return "FDREP" + String.format("%05d", fairDeliveryReportCounter.incrementAndGet());
+            case "FMREP":
+                System.out.println("ID_GEN_DEBUG: Hit FMREP Case!");
+                return "FMREP" + String.format("%05d", fairDeliveryReportCounter.incrementAndGet());
             case "USER":
                 return "USER" + String.format("%06d", userCounter.incrementAndGet());
             case "PROD":
                 return "PROD" + String.format("%03d", productCounter.incrementAndGet());
+            case "SUPP":
+                return "SUPP" + String.format("%06d", shopSupplyCounter.incrementAndGet());
+            case "SITE":
+                return "SITE" + String.format("%06d", shopSupplyItemCounter.incrementAndGet());
+            case "SREP":
+                return "SREP" + String.format("%06d", shopSupplyReportCounter.incrementAndGet());
+            case "SDREP":
+                System.out.println("ID_GEN_DEBUG: Hit SDREP Case!");
+                return "SDREP" + String.format("%05d", shopSupplyReportCounter.incrementAndGet());
+            case "SMREP":
+                System.out.println("ID_GEN_DEBUG: Hit SMREP Case!");
+                return "SMREP" + String.format("%05d", shopSupplyReportCounter.incrementAndGet());
             default:
+                System.out.println("ID_GEN_DEBUG: Hit DEFAULT Case! (This is the error)");
                 return prefix + String.format("%06d", System.currentTimeMillis() % 1000000);
         }
     }
@@ -49,11 +75,9 @@ public class IdGenerator {
     public static String saleId() {
         return generate("SALE");
     }
-
     public static String saleDetailId() {
         return generate("SDET");
     }
-
     public static String userId() {
         return generate("USER");
     }
@@ -65,4 +89,9 @@ public class IdGenerator {
     public static String monthlyReportId() { return generate("MREP"); }
     public static String fairDeliveryId() { return generate("FDEL"); }
     public static String fairItemId() { return generate("FITE"); }
+    public static String fairDeliveryReportId() { return generate("FREP"); }
+    public static String fairDailyReportId() { return generate("FDREP"); }
+    public static String shopSupplyId() { return generate("SUPP"); }
+    public static String shopSupplyItemId() { return generate("SITE"); }
+    public static String shopSupplyReportId() { return generate("SREP"); }
 }

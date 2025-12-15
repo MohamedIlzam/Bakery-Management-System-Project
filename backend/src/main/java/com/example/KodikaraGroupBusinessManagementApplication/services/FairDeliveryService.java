@@ -5,6 +5,7 @@ import com.example.KodikaraGroupBusinessManagementApplication.DTO.FairDeliveryIt
 import com.example.KodikaraGroupBusinessManagementApplication.Repo.*; // Import required Repos
 import com.example.KodikaraGroupBusinessManagementApplication.exception.ResourceNotFoundException;
 import com.example.KodikaraGroupBusinessManagementApplication.model.*;
+import com.example.KodikaraGroupBusinessManagementApplication.util.IdGenerator;
 import lombok.RequiredArgsConstructor; // Use Lombok
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,37 +17,35 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor // Use Lombok for constructor injection
+@RequiredArgsConstructor
 public class FairDeliveryService {
 
     private final FairDeliveryRepository fairDeliveryRepo;
     private final FairDeliveryItemRepository fairDeliveryItemRepo;
-    // --- Inject repositories needed for Create/Update ---
     private final VehicleRepository vehicleRepository;
     private final DriverRepository driverRepository;
     private final ProductRepository productRepository;
-    // --- END ---
 
-    // === CREATE: Member 1 Use Case 1 - Save Initial Log ===
+
     @Transactional
     public FairDeliveryDTO createInitialDeliveryLog(FairDeliveryDTO dto) {
-        // Find related entities (Assuming IDs are passed in DTO)
-        // Adjust if names are passed (e.g., use vehicleRepository.findByVehicleNo)
+        // Find related entities By IDs
         Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found with id: " + dto.getVehicleId()));
         Driver driver = driverRepository.findById(dto.getDriverId())
                 .orElseThrow(() -> new ResourceNotFoundException("Driver not found with id: " + dto.getDriverId()));
 
         FairDelivery fairDelivery = new FairDelivery();
-        fairDelivery.setDeliveryId(IdGenerator.generate("FDEL"));        fairDelivery.setFairName(dto.getFairName());
+        fairDelivery.setDeliveryId(IdGenerator.generate("FDEL"));
+        fairDelivery.setFairName(dto.getFairName());
         fairDelivery.setDeliveryDate(dto.getDeliveryDate() != null ? dto.getDeliveryDate() : LocalDate.now());
         fairDelivery.setVehicle(vehicle);
         fairDelivery.setDriver(driver);
-        fairDelivery.setStatus("OUT"); // Initial status
+        fairDelivery.setStatus("OUT");
         fairDelivery.setExtraPayments(dto.getExtraPayments());
         fairDelivery.setTax(dto.getTax());
         fairDelivery.setDieselAmount(dto.getDieselAmount());
-        fairDelivery.setProfit(BigDecimal.ZERO); // Initial profit
+        fairDelivery.setProfit(BigDecimal.ZERO);
 
         List<FairDeliveryItem> items = new ArrayList<>();
         if (dto.getItems() != null) {
@@ -55,7 +54,8 @@ public class FairDeliveryService {
                         .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemDto.getProductId()));
 
                 FairDeliveryItem item = new FairDeliveryItem();
-                item.setItemId(IdGenerator.generate("FITE"));                item.setFairDelivery(fairDelivery); // Link to parent
+                item.setItemId(IdGenerator.generate("FITE"));
+                item.setFairDelivery(fairDelivery);
                 item.setProduct(product);
                 item.setQtySent(itemDto.getQtySent());
                 item.setUnitPrice(itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : BigDecimal.ZERO);
@@ -65,11 +65,11 @@ public class FairDeliveryService {
         }
         fairDelivery.setItems(items);
 
-        FairDelivery savedDelivery = fairDeliveryRepo.save(fairDelivery); // Cascade saves items
-        return convertToDTO(savedDelivery); // Convert to DTO for response
+        FairDelivery savedDelivery = fairDeliveryRepo.save(fairDelivery);
+        return convertToDTO(savedDelivery);
     }
 
-    // === UPDATE: Member 1 Use Case 1 - Input Remaining Stock & Calculate Profit ===
+    //Input Remaining Stock & Calculate Profit
     @Transactional
     public FairDeliveryDTO updateReturnStock(String deliveryId, List<FairDeliveryItemDTO> returnedItemsDto) {
         FairDelivery fairDelivery = fairDeliveryRepo.findById(deliveryId)
@@ -105,7 +105,7 @@ public class FairDeliveryService {
         return convertToDTO(updatedDelivery);
     }
 
-    // === READ: Method to get a specific FairDelivery by ID ===
+    //Method to get a specific FairDelivery by ID
     @Transactional(readOnly = true)
     public FairDeliveryDTO getFairDeliveryById(String deliveryId) {
         FairDelivery fairDelivery = fairDeliveryRepo.findById(deliveryId)
@@ -113,14 +113,19 @@ public class FairDeliveryService {
         return convertToDTO(fairDelivery);
     }
 
-    // === READ: Method to get all FairDeliveries ===
+    //Method to get all FairDeliveries
     @Transactional(readOnly = true)
     public List<FairDeliveryDTO> getAllFairDeliveries() {
         return fairDeliveryRepo.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
-
+    public void deleteDelivery(String saleId) {
+        if (!fairDeliveryRepo.existsById(saleId)) {
+            throw new ResourceNotFoundException("Fair Delivery not found with id: " + saleId);
+        }
+        fairDeliveryRepo.deleteById(saleId);
+    }
 
     // Existing profit calculation logic (made private)
     private BigDecimal calculateProfitInternal(FairDelivery fairDelivery) {
@@ -139,7 +144,7 @@ public class FairDeliveryService {
         return totalIncome.subtract(totalExpenses);
     }
 
-    // Public method to just get the calculated profit (READ operation)
+
     @Transactional(readOnly = true)
     public BigDecimal getProfit(String deliveryId) {
         FairDelivery fairDelivery = fairDeliveryRepo.findById(deliveryId)
@@ -148,7 +153,49 @@ public class FairDeliveryService {
         // if ("RETURNED".equalsIgnoreCase(fairDelivery.getStatus()) && fairDelivery.getProfit() != null) {
         //     return fairDelivery.getProfit();
         // }
-        return calculateProfitInternal(fairDelivery); // Calculate fresh value
+        return calculateProfitInternal(fairDelivery);
+    }
+
+    @Transactional
+    public FairDeliveryDTO updateFairDelivery(String id, FairDeliveryDTO dto) {
+        FairDelivery delivery = fairDeliveryRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Delivery not found: " + id));
+
+
+        if(dto.getFairName() != null) delivery.setFairName(dto.getFairName());
+        if(dto.getDeliveryDate() != null) delivery.setDeliveryDate(dto.getDeliveryDate());
+        if(dto.getTax() != null) delivery.setTax(dto.getTax());
+        if(dto.getExtraPayments() != null) delivery.setExtraPayments(dto.getExtraPayments());
+        if(dto.getDieselAmount() != null) delivery.setDieselAmount(dto.getDieselAmount());
+        if(dto.getStatus() != null) delivery.setStatus(dto.getStatus());
+
+
+        if (dto.getDriverId() != null) {
+            Driver driver = driverRepository.findById(dto.getDriverId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Driver not found"));
+            delivery.setDriver(driver);
+        }
+        if (dto.getVehicleId() != null) {
+            Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
+            delivery.setVehicle(vehicle);
+        }
+
+        if (dto.getItems() != null && !dto.getItems().isEmpty()) {
+            for (FairDeliveryItemDTO itemDto : dto.getItems()) {
+                delivery.getItems().stream()
+                        .filter(existingItem -> existingItem.getProduct().getProId().equals(itemDto.getProductId()))
+                        .findFirst()
+                        .ifPresent(existingItem -> {
+                            existingItem.setQtySent(itemDto.getQtySent());
+                            existingItem.setQtyRemaining(itemDto.getQtyRemaining());
+                        });
+            }
+        }
+        BigDecimal newProfit = calculateProfitInternal(delivery);
+        delivery.setProfit(newProfit);
+
+        return convertToDTO(fairDeliveryRepo.save(delivery));
     }
 
 
@@ -157,7 +204,7 @@ public class FairDeliveryService {
         return value != null ? value : BigDecimal.ZERO;
     }
 
-    // === DTO Conversion Helpers ===
+    //DTO Conversion
     private FairDeliveryDTO convertToDTO(FairDelivery entity) {
         FairDeliveryDTO dto = new FairDeliveryDTO();
         dto.setDeliveryId(entity.getDeliveryId());
@@ -168,7 +215,6 @@ public class FairDeliveryService {
         dto.setDieselAmount(safe(entity.getDieselAmount()));
         dto.setProfit(safe(entity.getProfit()));
         dto.setStatus(entity.getStatus());
-        // Ensure Vehicle and Driver entities have getId() methods returning Long/String as appropriate
         if (entity.getVehicle() != null) dto.setVehicleId(entity.getVehicle().getVehicleId());
         if (entity.getDriver() != null) dto.setDriverId(entity.getDriver().getDriverId());
 
@@ -186,7 +232,6 @@ public class FairDeliveryService {
         FairDeliveryItemDTO dto = new FairDeliveryItemDTO();
         dto.setItemId(entity.getItemId());
         if (entity.getFairDelivery() != null) dto.setDeliveryId(entity.getFairDelivery().getDeliveryId());
-        // Ensure Product entity has getId() returning Long/String as appropriate
         if (entity.getProduct() != null) dto.setProductId(entity.getProduct().getProId());
         dto.setQtySent(entity.getQtySent());
         dto.setQtyRemaining(entity.getQtyRemaining());

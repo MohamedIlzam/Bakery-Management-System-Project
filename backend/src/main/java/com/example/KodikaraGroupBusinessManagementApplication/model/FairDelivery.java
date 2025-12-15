@@ -47,7 +47,6 @@ public class FairDelivery {
     @JoinColumn(name = "driver_id")
     private Driver driver;
 
-    // Removed orphanRemoval
     @OneToMany(mappedBy = "fairDelivery", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<FairDeliveryItem> items = new ArrayList<>();
 }

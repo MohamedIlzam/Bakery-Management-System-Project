@@ -17,10 +17,10 @@ public class Product {
     private String name;
     private String category;
     private BigDecimal unitPrice;
-    private String status;      // keep for now (teammates may use it)
-    private boolean active = true; // soft delete flag we added
+    private String status;
+    private boolean active = true;
 
-    // ---- getters & setters ----
+    //getters & setters
     public String getProId() {
         return proId;
     }

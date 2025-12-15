@@ -6,7 +6,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-@Repository // Add annotation
+@Repository
 public interface VehicleRepository extends JpaRepository<Vehicle,String> {
+    Optional<Vehicle> findById(String id);
     Optional<Vehicle> findByVehicleNo(String vehicleNo);
 }

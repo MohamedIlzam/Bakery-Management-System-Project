@@ -2,6 +2,7 @@ package com.example.KodikaraGroupBusinessManagementApplication.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -10,24 +11,17 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.context.SecurityContextPersistenceFilter; // Import this
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
-import java.util.Collections; // Make sure Collections is imported
-
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    static {
-        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
-    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -41,10 +35,15 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000")); // Allow frontend
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:8081",
+                "http://localhost:5173",
+                "http://localhost:3000"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
@@ -52,26 +51,41 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Create the repository bean ONCE
-        HttpSessionSecurityContextRepository sessionRepo = new HttpSessionSecurityContextRepository();
-
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                // --- START OF FIX ---
-                // Manually add the filter that loads the SecurityContext from the session
-                // Place it VERY early in the chain, before authorization happens.
-                .addFilter(new SecurityContextPersistenceFilter(sessionRepo))
-                // --- END OF FIX ---
+
                 .authorizeHttpRequests(auth -> auth
+                        // Public Endpoints
                         .requestMatchers("/api/auth/**").permitAll()
+                        //Report Creation(only for owner/admin)
+                        .requestMatchers("/api/fair-delivery-reports/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
+                        .requestMatchers("/api/shop-supply-reports/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
+                        //Owner Only Manage Data
+                        .requestMatchers("/api/users/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
+                        .requestMatchers("/api/drivers/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
+                        .requestMatchers("/api/shops/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
+                        //Salesman should be able to see products(not create/delete/update)
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyAuthority("ROLE_SALESMAN", "ROLE_DRIVER", "ROLE_OWNER", "ADMIN")
+                        .requestMatchers("/api/products/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
+                        // Salesman needs to READ (GET) their assignments
+                        .requestMatchers(HttpMethod.GET, "/api/shop-supplies/**").hasAnyAuthority("ROLE_SALESMAN", "ROLE_DRIVER", "ROLE_OWNER", "ADMIN")
+                        // Salesman needs to UPDATE (PUT) to add products to an existing assignment
+                        .requestMatchers(HttpMethod.PUT, "/api/shop-supplies/**").hasAnyAuthority("ROLE_SALESMAN", "ROLE_OWNER", "ADMIN")
+                        // Salesman CANNOT Create (POST) or Delete (DELETE) - Only Owner can
+                        .requestMatchers("/api/shop-supplies/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
+
+                        //Fair delivery only for Admin
+                        .requestMatchers(HttpMethod.GET, "/api/fair-deliveries/**").hasAnyAuthority("ROLE_SALESMAN", "ROLE_DRIVER", "ROLE_OWNER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/fair-deliveries/**").hasAnyAuthority("ROLE_SALESMAN", "ROLE_OWNER", "ADMIN")
+                        .requestMatchers("/api/fair-deliveries/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
+
+                        .requestMatchers("/api/salesman/**").hasAnyAuthority("ROLE_SALESMAN", "ROLE_DRIVER", "ROLE_OWNER", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-                        // We can be explicit again now that the filter is manual
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
-                // We don't need .securityContext() anymore as the filter handles it
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable());
 

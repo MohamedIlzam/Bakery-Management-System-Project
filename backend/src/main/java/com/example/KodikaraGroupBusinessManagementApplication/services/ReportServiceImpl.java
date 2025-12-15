@@ -27,9 +27,9 @@ public class ReportServiceImpl implements ReportService {
     private final DailyReportRepository dailyReportRepository;
     private final MonthlyReportRepository monthlyReportRepository;
     private final SaleRepository saleRepository;
-    private final SaleService saleService; // Inject SaleService to use its helpers
+    private final SaleService saleService;
 
-    // --- Daily Report Implementation ---
+    // Daily Report Implementation
 
     @Override
     public DailyReportDTO generateDailyReport(LocalDate date) {
@@ -78,7 +78,7 @@ public class ReportServiceImpl implements ReportService {
         dailyReportRepository.deleteById(reportId);
     }
 
-    // --- Monthly Report Implementation ---
+    //  Monthly Report Implementation
 
     @Override
     public MonthlyReportDTO generateMonthlyReport(YearMonth yearMonth) {
@@ -100,8 +100,8 @@ public class ReportServiceImpl implements ReportService {
         MonthlyReport newReport = new MonthlyReport();
         newReport.setMreportId(IdGenerator.monthlyReportId());
         newReport.setMreportDate(monthString);
-        newReport.setMtotalSales(totalSalesAmount); // Use correct setter
-        newReport.setMtotalTransac(numberOfTransactions); // Use correct setter
+        newReport.setMtotalSales(totalSalesAmount);
+        newReport.setMtotalTransac(numberOfTransactions);
         // generatedOn is set by @CreationTimestamp
 
         MonthlyReport savedReport = monthlyReportRepository.save(newReport);
@@ -112,7 +112,7 @@ public class ReportServiceImpl implements ReportService {
     @Transactional(readOnly = true)
     public List<MonthlyReportDTO> getMonthlyReportsByMonth(YearMonth yearMonth) {
         String monthString = yearMonth.format(DateTimeFormatter.ofPattern("yyyy-MM"));
-        List<MonthlyReport> reports = monthlyReportRepository.findByMreportDate(monthString); // Use correct param type
+        List<MonthlyReport> reports = monthlyReportRepository.findByMreportDate(monthString);
         return reports.stream().map(this::convertToMonthlyDTO).collect(Collectors.toList());
     }
 
@@ -132,7 +132,6 @@ public class ReportServiceImpl implements ReportService {
         monthlyReportRepository.deleteById(reportId);
     }
 
-    // --- Analytics Part Implementation ---
 
     @Override
     @Transactional(readOnly = true)
@@ -141,9 +140,6 @@ public class ReportServiceImpl implements ReportService {
                                                       Optional<String> shopName,
                                                       Optional<String> driverName) {
 
-        // Call the new repository method.
-        // The .orElse(null) part passes 'null' to the query if the Optional is empty,
-        // which tells the query to skip that filter.
         List<Sale> filteredSales = saleRepository.findSalesByCriteria(
                 startDate,
                 endDate,
@@ -152,14 +148,11 @@ public class ReportServiceImpl implements ReportService {
                 driverName.orElse(null)
         );
 
-        // Use the public helper method from SaleService (this part stays the same)
         return saleService.convertToResponseDTOList(filteredSales);
     }
 
-    // --- Helper DTO Conversion Methods ---
 
     private DailyReportDTO convertToDailyDTO(DailyReport report) {
-        // Use the corrected DailyReportDTO
         return new DailyReportDTO(
                 report.getDreportId(),
                 report.getDreportDate(),
@@ -170,13 +163,12 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private MonthlyReportDTO convertToMonthlyDTO(MonthlyReport report) {
-        // Use the corrected MonthlyReportDTO and entity getters
         return new MonthlyReportDTO(
                 report.getMreportId(),
                 report.getMreportDate(),
-                report.getMtotalSales(), // Use correct getter
-                report.getMtotalTransac(), // Use correct getter
-                report.getGeneratedOn() // Use correct getter
+                report.getMtotalSales(),
+                report.getMtotalTransac(),
+                report.getGeneratedOn()
         );
     }
 }
