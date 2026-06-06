@@ -59,7 +59,7 @@ public class FairDeliveryService {
                 item.setProduct(product);
                 item.setQtySent(itemDto.getQtySent());
                 item.setUnitPrice(itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : BigDecimal.ZERO);
-                item.setQtyRemaining(itemDto.getQtySent()); // Initially, remaining = sent
+                item.setQtyRemaining(itemDto.getQtyRemaining()); // Uses 0 by default, or the user provided quantity
                 items.add(item);
             }
         }

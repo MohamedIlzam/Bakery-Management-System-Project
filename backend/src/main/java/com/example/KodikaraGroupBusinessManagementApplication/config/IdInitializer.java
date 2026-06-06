@@ -32,9 +32,9 @@ public class IdInitializer implements CommandLineRunner {
         initializeCounter("DREP", DailyReport.class, "dreportId");
         initializeCounter("MREP", MonthlyReport.class, "mreportId");
         initializeCounter("FDEL", FairDelivery.class, "deliveryId");
-        initializeCounter("FITE", FairDeliveryItem.class, "fitemId");
+        initializeCounter("FITE", FairDeliveryItem.class, "itemId");
         initializeCounter("SUPP", ShopSupply.class, "supplyId");
-        initializeCounter("SITE", ShopSupplyItem.class, "sitemId");
+        initializeCounter("SITE", ShopSupplyItem.class, "itemId");
 
         // Reports that share counters (we retrieve max across prefix patterns)
         initializeSharedCounter("FDREP", "freportId", FairDeliveryReport.class);
@@ -53,19 +53,22 @@ public class IdInitializer implements CommandLineRunner {
                 String maxId = result.toString();
                 long maxNum = IdGenerator.extractNumber(maxId);
                 IdGenerator.setCounter(prefix, maxNum);
-                System.out.println("  Counter for " + prefix + " set to " + maxNum + " (Max existing ID: " + maxId + ")");
+                System.out
+                        .println("  Counter for " + prefix + " set to " + maxNum + " (Max existing ID: " + maxId + ")");
             } else {
                 IdGenerator.setCounter(prefix, 0);
                 System.out.println("  Counter for " + prefix + " set to 0 (No existing records)");
             }
         } catch (Exception e) {
-            System.err.println("  Failed to initialize counter for " + prefix + " (" + entityClass.getSimpleName() + "): " + e.getMessage());
+            System.err.println("  Failed to initialize counter for " + prefix + " (" + entityClass.getSimpleName()
+                    + "): " + e.getMessage());
         }
     }
 
     private void initializeSharedCounter(String prefix, String idFieldName, Class<?> entityClass) {
         try {
-            String queryStr = "SELECT e." + idFieldName + " FROM " + entityClass.getSimpleName() + " e WHERE e." + idFieldName + " LIKE :prefix";
+            String queryStr = "SELECT e." + idFieldName + " FROM " + entityClass.getSimpleName() + " e WHERE e."
+                    + idFieldName + " LIKE :prefix";
             List<String> ids = entityManager.createQuery(queryStr, String.class)
                     .setParameter("prefix", prefix + "%")
                     .getResultList();
@@ -77,9 +80,11 @@ public class IdInitializer implements CommandLineRunner {
                 }
             }
             IdGenerator.setCounter(prefix, maxNum);
-            System.out.println("  Shared counter for " + prefix + " set to " + maxNum + " (Scanned " + ids.size() + " records)");
+            System.out.println(
+                    "  Shared counter for " + prefix + " set to " + maxNum + " (Scanned " + ids.size() + " records)");
         } catch (Exception e) {
-            System.err.println("  Failed to initialize shared counter for " + prefix + " (" + entityClass.getSimpleName() + "): " + e.getMessage());
+            System.err.println("  Failed to initialize shared counter for " + prefix + " ("
+                    + entityClass.getSimpleName() + "): " + e.getMessage());
         }
     }
 }
