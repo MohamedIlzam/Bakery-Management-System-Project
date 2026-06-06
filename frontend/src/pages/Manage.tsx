@@ -37,10 +37,19 @@ const Manage = () => {
   // Salesmen State
   const [salesmen, setSalesmen] = useState<SalesmanDTO[]>([]);
   const [salesmanUsername, setSalesmanUsername] = useState("");
-  const [salesmanRole, setSalesmanRole] = useState("ROLE_SALESMAN");
+  const [salesmanRole, setSalesmanRole] = useState("Salesman");
   const [salesmanPassword, setSalesmanPassword] = useState("");
   const [editingSalesmanId, setEditingSalesmanId] = useState<string | null>(null);
   const [isLoadingSalesmen, setIsLoadingSalesmen] = useState(false);
+
+  const formatRole = (role: string) => {
+    if (!role) return "";
+    let cleanRole = role.replace(/^ROLE_/, "");
+    if (cleanRole === "SALESMAN") return "Salesman";
+    if (cleanRole === "OWNER") return "Owner";
+    if (cleanRole === "DRIVER") return "Driver";
+    return cleanRole.charAt(0).toUpperCase() + cleanRole.slice(1).toLowerCase();
+  };
 
   // Load data on mount
   useEffect(() => {
@@ -280,7 +289,7 @@ const Manage = () => {
       if (editingSalesmanId) {
         const updateData: any = { username: salesmanUsername, role: salesmanRole };
         if (salesmanPassword.trim()) {
-            updateData.password = salesmanPassword;
+          updateData.password = salesmanPassword;
         }
         await salesmanService.update(editingSalesmanId, updateData);
         toast({ title: "Success", description: "User updated successfully" });
@@ -296,7 +305,7 @@ const Manage = () => {
       await loadSalesmen();
       setSalesmanUsername("");
       setSalesmanPassword("");
-      setSalesmanRole("ROLE_SALESMAN");
+      setSalesmanRole("Salesman");
       setEditingSalesmanId(null);
     } catch (error: any) {
       toast({
@@ -311,7 +320,14 @@ const Manage = () => {
 
   const handleEditSalesman = (salesman: SalesmanDTO) => {
     setSalesmanUsername(salesman.username);
-    setSalesmanRole(salesman.role);
+    
+    // Normalize role to match dropdown Select options
+    let cleanRole = salesman.role || "";
+    if (cleanRole === "ROLE_SALESMAN") cleanRole = "Salesman";
+    else if (cleanRole === "ROLE_OWNER" || cleanRole === "ADMIN") cleanRole = "Owner";
+    else if (cleanRole === "ROLE_DRIVER") cleanRole = "Driver";
+    
+    setSalesmanRole(cleanRole);
     setEditingSalesmanId(salesman.userId!);
   };
 
@@ -407,13 +423,13 @@ const Manage = () => {
                       {editingProductId ? "Update" : "Add"} Product
                     </Button>
                     {editingProductId && (
-                      <Button 
+                      <Button
                         onClick={() => {
                           setProductName("");
                           setProductCategory("");
                           setProductUnitPrice("");
                           setEditingProductId(null);
-                        }} 
+                        }}
                         variant="outline"
                         disabled={isLoadingProducts}
                       >
@@ -538,14 +554,14 @@ const Manage = () => {
                       {editingShopId ? "Update" : "Add"} Shop
                     </Button>
                     {editingShopId && (
-                      <Button 
+                      <Button
                         onClick={() => {
                           setShopName("");
                           setShopOwnerName("");
                           setShopContactNo("");
                           setShopAddress("");
                           setEditingShopId(null);
-                        }} 
+                        }}
                         variant="outline"
                         disabled={isLoadingShops}
                       >
@@ -637,15 +653,15 @@ const Manage = () => {
                     />
                   </div>
                   <div>
-                  <Label htmlFor="salesmanPassword">
-                    Password {editingSalesmanId ? "(Leave blank to keep current)" : "*"}</Label>
+                    <Label htmlFor="salesmanPassword">
+                      Password {editingSalesmanId ? "(Leave blank to keep current)" : "*"}</Label>
                     <Input
-                    id="salesmanPassword"
-                    type="password"
-                    value={salesmanPassword}
-                    onChange={(e) => setSalesmanPassword(e.target.value)}
-                    placeholder="Password"
-                    disabled={isLoadingSalesmen}
+                      id="salesmanPassword"
+                      type="password"
+                      value={salesmanPassword}
+                      onChange={(e) => setSalesmanPassword(e.target.value)}
+                      placeholder="Password"
+                      disabled={isLoadingSalesmen}
                     />
                   </div>
                   <div>
@@ -659,9 +675,9 @@ const Manage = () => {
                         <SelectValue placeholder="Select role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="ROLE_SALESMAN">Salesman</SelectItem>
-                        <SelectItem value="ROLE_DRIVER">Driver</SelectItem>
-                        <SelectItem value="ROLE_OWNER">Owner</SelectItem>
+                        <SelectItem value="Salesman">Salesman</SelectItem>
+                        <SelectItem value="Driver">Driver</SelectItem>
+                        <SelectItem value="Owner">Owner</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -674,13 +690,13 @@ const Manage = () => {
                       {editingSalesmanId ? "Update" : "Add"} User
                     </Button>
                     {editingSalesmanId && (
-                      <Button 
+                      <Button
                         onClick={() => {
                           setSalesmanUsername("");
-                          setSalesmanRole("ROLE_SALESMAN");
+                          setSalesmanRole("Salesman");
                           setSalesmanPassword("");
                           setEditingSalesmanId(null);
-                        }} 
+                        }}
                         variant="outline"
                         disabled={isLoadingSalesmen}
                       >
@@ -719,7 +735,7 @@ const Manage = () => {
                             <TableRow key={salesman.userId}>
                               <TableCell>{salesman.username}</TableCell>
                               <TableCell>{salesman.userId}</TableCell>
-                              <TableCell>{salesman.role}</TableCell>
+                              <TableCell>{formatRole(salesman.role)}</TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
                                   <Button

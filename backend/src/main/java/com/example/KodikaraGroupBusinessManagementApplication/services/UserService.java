@@ -46,6 +46,15 @@ public class UserService implements UserDetailsService {
         String role = user.getRole();
         if (role == null || role.trim().isEmpty()) {
             role = "ROLE_SALESMAN";
+        } else {
+            // Map new clean role strings to Spring Security's expected authority strings
+            if ("Salesman".equalsIgnoreCase(role)) {
+                role = "ROLE_SALESMAN";
+            } else if ("Owner".equalsIgnoreCase(role) || "Admin".equalsIgnoreCase(role)) {
+                role = "ROLE_OWNER";
+            } else if ("Driver".equalsIgnoreCase(role)) {
+                role = "ROLE_DRIVER";
+            }
         }
 
         // 3. Check if we reach the end of the method
@@ -67,7 +76,21 @@ public class UserService implements UserDetailsService {
         newUser.setUserId(IdGenerator.userId());
         newUser.setUsername(userDTO.getUsername());
         newUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        newUser.setRole(userDTO.getRole() != null ? userDTO.getRole() : "ROLE_SALESMAN"); // Use provided role or default
+        
+        // Map the role back to DB/Spring Security compatible values
+        String role = userDTO.getRole();
+        if (role == null || role.trim().isEmpty()) {
+            role = "ROLE_SALESMAN";
+        } else {
+            if ("Salesman".equalsIgnoreCase(role)) {
+                role = "ROLE_SALESMAN";
+            } else if ("Owner".equalsIgnoreCase(role)) {
+                role = "ROLE_OWNER";
+            } else if ("Driver".equalsIgnoreCase(role)) {
+                role = "ROLE_DRIVER";
+            }
+        }
+        newUser.setRole(role);
         return userRepository.save(newUser);
     }
 
@@ -81,7 +104,7 @@ public class UserService implements UserDetailsService {
         return userRepository.findByRole(role);
     }
 
-    //  Get One User by ID
+    // Get One User by ID
     public User getUserById(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -104,13 +127,21 @@ public class UserService implements UserDetailsService {
 
         // Update role if provided
         if (userUpdateDTO.getRole() != null && !userUpdateDTO.getRole().isEmpty()) {
-            userToUpdate.setRole(userUpdateDTO.getRole());
+            String role = userUpdateDTO.getRole();
+            if ("Salesman".equalsIgnoreCase(role)) {
+                role = "ROLE_SALESMAN";
+            } else if ("Owner".equalsIgnoreCase(role)) {
+                role = "ROLE_OWNER";
+            } else if ("Driver".equalsIgnoreCase(role)) {
+                role = "ROLE_DRIVER";
+            }
+            userToUpdate.setRole(role);
         }
 
         return userRepository.save(userToUpdate);
     }
 
-    //  Delete a User
+    // Delete a User
     public void deleteUser(String userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with id: " + userId);

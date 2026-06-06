@@ -94,4 +94,45 @@ public class IdGenerator {
     public static String shopSupplyId() { return generate("SUPP"); }
     public static String shopSupplyItemId() { return generate("SITE"); }
     public static String shopSupplyReportId() { return generate("SREP"); }
+
+    public static void setCounter(String prefix, long value) {
+        switch (prefix) {
+            case "SALE": saleCounter.set(value); break;
+            case "SHOP": shopCounter.set(value); break;
+            case "VEH": vehicleCounter.set(value); break;
+            case "SDET": detailCounter.set(value); break;
+            case "DRV": driverCounter.set(value); break;
+            case "DREP": dailyReportCounter.set(value); break;
+            case "MREP": monthlyReportCounter.set(value); break;
+            case "FDEL": fairDeliveryCounter.set(value); break;
+            case "FITE": fairItemCounter.set(value); break;
+            case "FREP": productCounter.set(value); break;
+            case "FDREP": fairDeliveryReportCounter.set(value); break;
+            case "FMREP": fairDeliveryReportCounter.set(value); break;
+            case "USER": userCounter.set(value); break;
+            case "PROD": productCounter.set(value); break;
+            case "SUPP": shopSupplyCounter.set(value); break;
+            case "SITE": shopSupplyItemCounter.set(value); break;
+            case "SREP": shopSupplyReportCounter.set(value); break;
+            case "SDREP": shopSupplyReportCounter.set(value); break;
+            case "SMREP": shopSupplyReportCounter.set(value); break;
+        }
+    }
+
+    public static long extractNumber(String id) {
+        if (id == null || id.isEmpty()) return 0;
+        int firstDigitIndex = -1;
+        for (int i = 0; i < id.length(); i++) {
+            if (Character.isDigit(id.charAt(i))) {
+                firstDigitIndex = i;
+                break;
+            }
+        }
+        if (firstDigitIndex == -1) return 0;
+        try {
+            return Long.parseLong(id.substring(firstDigitIndex));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
 }
