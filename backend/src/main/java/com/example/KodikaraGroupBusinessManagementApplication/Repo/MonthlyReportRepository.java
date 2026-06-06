@@ -9,9 +9,7 @@ import java.util.List;
 
 @Repository
 public interface MonthlyReportRepository extends JpaRepository<MonthlyReport,String> {
-    // Parameter changed to String to match 'mreportDate' field
-    List<MonthlyReport> findByMreportDate(String yearMonth);
 
-    // Field name corrected to 'mreportDate'
+    List<MonthlyReport> findByMreportDate(String yearMonth);
     boolean existsByMreportDate(String yearMonth);
 }

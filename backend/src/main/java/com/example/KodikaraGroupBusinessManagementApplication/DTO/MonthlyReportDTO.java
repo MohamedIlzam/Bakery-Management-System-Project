@@ -8,12 +8,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor // Add NoArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor
 public class MonthlyReportDTO {
     private String mreportId;
-    private String reportMonth; // e.g., "2025-10"
-    private BigDecimal mtotalSales; // Matched entity field
-    private int mtotalTransac; // Matched entity field
+    private String reportMonth;
+    private BigDecimal mtotalSales;
+    private int mtotalTransac;
     private LocalDateTime generatedOn;
 }

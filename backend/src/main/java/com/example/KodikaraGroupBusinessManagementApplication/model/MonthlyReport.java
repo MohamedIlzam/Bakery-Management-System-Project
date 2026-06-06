@@ -23,15 +23,15 @@ public class MonthlyReport {
     private String mreportId;
 
     @Column(name ="mreport_date", columnDefinition = "CHAR(7)", nullable = false, unique = true)
-    private String mreportDate; // e.g., "2025-10"
+    private String mreportDate;
 
     @Column(name = "mtotal_sales", precision=15, scale = 2, nullable = false)
-    private BigDecimal mtotalSales; // Field name is correct
+    private BigDecimal mtotalSales;
 
     @Column(name="mtotal_transac", nullable = false)
     private int mtotalTransac;
 
     @CreationTimestamp
     @Column(name = "generated_on", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime generatedOn; // Fixed typo "genaratedOn"
+    private LocalDateTime generatedOn;
 }

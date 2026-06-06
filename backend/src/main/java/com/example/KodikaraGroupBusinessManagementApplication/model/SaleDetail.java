@@ -10,8 +10,8 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "sale_detail")
-@Getter // Use Lombok
-@Setter // Use Lombok
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class SaleDetail {

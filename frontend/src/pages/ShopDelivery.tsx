@@ -1,0 +1,715 @@
+// import { useState, useEffect } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import { Label } from "@/components/ui/label";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { ArrowLeft, Plus, Trash2, Edit2, Printer } from "lucide-react";
+// import { useToast } from "@/hooks/use-toast";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// import { shopSupplyService, ShopSupplyRequestDTO, ShopSupplyItemDTO, ShopSupplyResponseDTO } from "@/services/shop-supply.service";
+// import { productService, ProductDTO } from "@/services/product.service";
+// import { shopService, ShopDTO } from "@/services/shop.service";
+// import { driverService, DriverDTO } from "@/services/driver.service";
+// import { vehicleService, VehicleDTO } from "@/services/vehicle.service";
+// // FIX 1: Correct Import with curly braces
+// import { printBill } from "../utils/printBill";
+
+// interface ProductItem {
+//   id: string;
+//   productId: string;
+//   productName: string;
+//   quantity: number;
+//   price: number;
+// }
+
+// const ShopDelivery = () => {
+//   const navigate = useNavigate();
+//   const { toast } = useToast();
+  
+//   // FIX 2: Better User Handling (Mock or Real)
+//   const getCurrentUser = () => {
+//     const userStr = localStorage.getItem('user');
+//     // FAILSAFE: If no user in local storage, use a hardcoded fallback for testing
+//     // REPLACE "USR001" with a valid User ID from your database!
+//     return userStr ? JSON.parse(userStr) : { userId: "USR001", role: "OWNER" };
+//   };
+  
+//   const currentUser = getCurrentUser();
+//   const isAdmin = currentUser?.role === 'OWNER';
+  
+//   const [shopId, setShopId] = useState("");
+//   const [driverId, setDriverId] = useState(""); 
+//   const [products, setProducts] = useState<ProductItem[]>([
+//     { id: "1", productId: "", productName: "", quantity: 0, price: 0 }
+//   ]);
+  
+//   const [availableProducts, setAvailableProducts] = useState<ProductDTO[]>([]);
+//   const [availableShops, setAvailableShops] = useState<ShopDTO[]>([]);
+//   const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
+//   const [availableVehicles, setAvailableVehicles] = useState<VehicleDTO[]>([]);
+//   const [vehicleId, setVehicleId] = useState("");
+//   const [savedDeliveries, setSavedDeliveries] = useState<ShopSupplyResponseDTO[]>([]);
+//   const [editingDeliveryId, setEditingDeliveryId] = useState<string | null>(null);
+//   const [isLoading, setIsLoading] = useState(false);
+
+//   useEffect(() => {
+//     loadAllData();
+//   }, []);
+
+//   const loadAllData = async () => {
+//     await Promise.all([
+//       loadProducts(),
+//       loadShops(),
+//       loadDrivers(),
+//       loadVehicles(),
+//       loadDeliveries()
+//     ]);
+//   };
+
+//   const loadProducts = async () => {
+//     try {
+//       const data = await productService.list();
+//       setAvailableProducts(data);
+//     } catch (error: any) { console.error("Failed to load products"); }
+//   };
+
+//   const loadShops = async () => {
+//     try {
+//       const data = await shopService.list();
+//       setAvailableShops(data);
+//     } catch (error: any) { console.error("Failed to load shops"); }
+//   };
+
+//   const loadDrivers = async () => {
+//     try {
+//       const data = await driverService.list();
+//       setAvailableDrivers(data);
+//     } catch (error: any) { console.error("Failed to load drivers"); }
+//   };
+  
+//   const loadVehicles = async () => {
+//     try {
+//       const data = await vehicleService.list();
+//       setAvailableVehicles(data);
+//     } catch (error: any) { console.error("Failed to load vehicles"); }
+//   };
+  
+//   const loadDeliveries = async () => {
+//     try {
+//       const data = await shopSupplyService.list();
+//       setSavedDeliveries(data);
+//     } catch (error: any) { console.error("Failed to load deliveries"); }
+//   };
+
+//   const addProduct = () => {
+//     setProducts([...products, { id: Date.now().toString(), productId: "", productName: "", quantity: 0, price: 0 }]);
+//   };
+
+//   const updateProduct = (id: string, field: keyof ProductItem, value: any) => {
+//     setProducts(products.map(product => {
+//       if (product.id === id) {
+//         if (field === 'productId' && typeof value === 'string') {
+//           const selectedProduct = availableProducts.find(p => p.proId === value);
+//           if (selectedProduct) {
+//             return { ...product, productId: value, productName: selectedProduct.name, price: selectedProduct.unitPrice };
+//           }
+//         }
+//         return { ...product, [field]: value };
+//       }
+//       return product;
+//     }));
+//   };
+
+//   const removeProduct = (id: string) => {
+//     if (products.length > 1) {
+//       setProducts(products.filter(product => product.id !== id));
+//     }
+//   };
+
+//   const handleSave = async () => {
+//     if (!shopId) {
+//       toast({ title: "Error", description: "Please select a shop", variant: "destructive" });
+//       return;
+//     }
+//     // Driver is now optional at assignment stage, but vehicle is needed
+//     if (!vehicleId) {
+//       toast({ title: "Error", description: "Please select a vehicle", variant: "destructive" });
+//       return;
+//     }
+
+//     // Filter valid items
+//     const validItems = products.filter(p => p.productId && p.quantity > 0);
+    
+//     // Assignment Logic: Allow saving if empty, but confirm
+//     if (validItems.length === 0 && !confirm("Save as Assignment (No products)?")) {
+//         return;
+//     }
+
+//     setIsLoading(true);
+//     try {
+//       const items: ShopSupplyItemDTO[] = validItems.map(p => ({
+//         productId: p.productId,
+//         productName: p.productName,
+//         quantity: p.quantity,
+//         price: p.price,
+//         shopId: shopId,
+//       }));
+
+//       // FIX 3: Correct Mapping for Backend
+//       const requestBody: ShopSupplyRequestDTO = {
+//         shopId,
+//         salesmanId: currentUser.userId, // Send USER ID (The 404 Fix!)
+//         driverId: driverId,             // Send DRIVER ID (Separately)
+//         vehicleId,
+//         items,
+//       };
+
+//       if (editingDeliveryId) {
+//         await shopSupplyService.update(editingDeliveryId, requestBody);
+//         toast({ title: "Success", description: "Updated successfully" });
+//       } else {
+//         await shopSupplyService.create(requestBody);
+//         toast({ title: "Success", description: "Saved successfully" });
+//       }
+
+//       await loadDeliveries();
+//       resetForm();
+//     } catch (error: any) {
+//       console.error("Error saving:", error);
+//       const msg = error.response?.data?.message || "Failed to save.";
+//       toast({ title: "Error", description: msg, variant: "destructive" });
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const handleEdit = (delivery: ShopSupplyResponseDTO) => {
+//     setEditingDeliveryId(delivery.supplyId);
+//     setShopId(delivery.shopId || "");
+//     setDriverId(delivery.driverId || ""); 
+//     setVehicleId(delivery.vehicleId || "");
+
+//     if (delivery.items && delivery.items.length > 0) {
+//       setProducts(delivery.items.map((item, index) => ({
+//         id: index.toString(),
+//         productId: item.productId,
+//         productName: item.productName || "",
+//         quantity: item.quantity,
+//         price: item.price || 0,
+//       })));
+//     } else {
+//       setProducts([{ id: "1", productId: "", productName: "", quantity: 0, price: 0 }]);
+//     }
+//     window.scrollTo({ top: 0, behavior: 'smooth' });
+//   };
+
+//   const handleDelete = async (deliveryId: string) => {
+//     if (!confirm("Are you sure?")) return;
+//     setIsLoading(true);
+//     try {
+//       await shopSupplyService.delete(deliveryId);
+//       toast({ title: "Success", description: "Deleted successfully" });
+//       await loadDeliveries();
+//     } catch (error) {
+//         toast({ title: "Error", description: "Failed to delete", variant: "destructive" });
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const resetForm = () => {
+//     setEditingDeliveryId(null);
+//     setShopId("");
+//     setDriverId("");
+//     setVehicleId("");
+//     setProducts([{ id: "1", productId: "", productName: "", quantity: 0, price: 0 }]);
+//   };
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-bakery-cream to-bakery-warm">
+//       <header className="bg-white/80 backdrop-blur-sm border-b border-border shadow-[var(--shadow-soft)]">
+//         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+//           <div className="flex items-center space-x-3">
+//             <Button variant="ghost" onClick={() => navigate("/dashboard")}> <ArrowLeft className="h-4 w-4" /> </Button>
+//             <h1 className="text-xl font-bold text-bakery-brown">Deliver to Shops</h1>
+//           </div>
+//         </div>
+//       </header>
+
+//       <main className="container mx-auto px-4 py-8 space-y-8">
+//         {/* Form Card */}
+//         <div className="flex justify-center">
+//           <Card className="w-full max-w-2xl">
+//             <CardHeader>
+//               <CardTitle>{editingDeliveryId ? "Update Delivery" : "New Shop Delivery / Assignment"}</CardTitle>
+//             </CardHeader>
+//             <CardContent className="space-y-4">
+//               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//                 <div>
+//                   <Label>Select Shop *</Label>
+//                   <Select value={shopId} onValueChange={setShopId} disabled={isLoading}>
+//                     <SelectTrigger><SelectValue placeholder="Select shop" /></SelectTrigger>
+//                     <SelectContent>
+//                       {availableShops.map((s) => (<SelectItem key={s.shopId} value={s.shopId!}>{s.shopName}</SelectItem>))}
+//                     </SelectContent>
+//                   </Select>
+//                 </div>
+//                 <div>
+//                   <Label>Assign Driver</Label>
+//                   <Select value={driverId} onValueChange={setDriverId} disabled={isLoading}>
+//                     <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
+//                     <SelectContent>
+//                       {availableDrivers.map((d) => (<SelectItem key={d.driverId} value={d.driverId!}>{d.name}</SelectItem>))}
+//                     </SelectContent>
+//                   </Select>
+//                 </div>
+//               </div>
+              
+//               <div>
+//                 <Label>Vehicle *</Label>
+//                 <Select value={vehicleId} onValueChange={setVehicleId} disabled={isLoading}>
+//                   <SelectTrigger><SelectValue placeholder="Select vehicle" /></SelectTrigger>
+//                   <SelectContent>
+//                     {availableVehicles.map((v) => (<SelectItem key={v.vehicleId} value={v.vehicleId!}>{v.vehicleNo}</SelectItem>))}
+//                   </SelectContent>
+//                 </Select>
+//               </div>
+
+//               <div className="space-y-3 mt-6">
+//                 <div className="flex items-center justify-between">
+//                   <Label className="text-base font-semibold">Products (Leave empty to Assign Job)</Label>
+//                   <Button onClick={addProduct} size="sm" variant="outline" disabled={isLoading}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+//                 </div>
+//                 <div className="space-y-2">
+//                   {products.map((product) => (
+//                     <div key={product.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 border rounded-lg">
+//                       <Select value={product.productId} onValueChange={(val) => updateProduct(product.id, "productId", val)} disabled={isLoading}>
+//                         <SelectTrigger><SelectValue placeholder="Product" /></SelectTrigger>
+//                         <SelectContent>{availableProducts.map((p) => (<SelectItem key={p.proId} value={p.proId!}>{p.name}</SelectItem>))}</SelectContent>
+//                       </Select>
+//                       <Input type="number" value={product.quantity} onChange={(e) => updateProduct(product.id, "quantity", Number(e.target.value))} placeholder="Qty" />
+//                       <Input type="number" value={product.price} readOnly placeholder="Price" className="bg-muted"/>
+//                       <div className="flex items-center gap-2">
+//                          <Button variant="ghost" size="sm" onClick={() => removeProduct(product.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+//                       </div>
+//                     </div>
+//                   ))}
+//                 </div>
+//               </div>
+
+//               <div className="flex justify-end space-x-2 mt-6 border-t pt-4">
+//                 <Button variant="outline" onClick={resetForm}>Clear</Button>
+//                 <Button onClick={handleSave} disabled={isLoading}>
+//                     {editingDeliveryId ? "Update" : "Save"}
+//                 </Button>
+//               </div>
+//             </CardContent>
+//           </Card>
+//         </div>
+
+//         {/* List */}
+//         <div className="space-y-4">
+//             <h2 className="text-xl font-semibold text-bakery-brown">Recent Deliveries</h2>
+//             {savedDeliveries.map((delivery) => (
+//               <Card key={delivery.supplyId}>
+//                 <div className="p-4 bg-gray-50 flex justify-between items-start">
+//                     <div className="space-y-1">
+//                         <div className="flex items-center gap-2">
+//                             <h3 className="font-bold text-lg">{delivery.shopName}</h3>
+//                             {delivery.items.length === 0 && <span className="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded">ASSIGNED</span>}
+//                         </div>
+//                         <p className="text-sm text-gray-600">{delivery.supplyDate} | Driver: {delivery.driverName} | Vehicle: {delivery.vehicleNo}</p>
+                        
+//                         {delivery.items.length > 0 && (
+//                           <div className="mt-2 text-sm bg-white p-2 rounded border">
+//                               {delivery.items.map((item, i) => (
+//                                   <div key={i} className="flex justify-between">
+//                                     <span>{item.productName} x {item.quantity}</span>
+//                                     <span>Rs. {(item.quantity * (item.price || 0)).toFixed(2)}</span>
+//                                   </div>
+//                               ))}
+//                               <div className="border-t mt-1 pt-1 font-bold text-right">
+//                                 Total: Rs. {Number(delivery.totalAmount || 0).toFixed(2)}
+//                               </div>
+//                           </div>
+//                         )}
+//                     </div>
+//                     <div className="flex flex-col gap-2">
+//                         {delivery.items.length > 0 && 
+//                             <Button size="sm" variant="secondary" onClick={() => printBill(delivery)}><Printer className="h-4 w-4" /></Button>
+//                         }
+//                         <Button size="sm" variant="outline" onClick={() => handleEdit(delivery)}><Edit2 className="h-4 w-4" /></Button>
+//                         <Button size="sm" variant="destructive" onClick={() => handleDelete(delivery.supplyId)}><Trash2 className="h-4 w-4" /></Button>
+//                     </div>
+//                 </div>
+//               </Card>
+//             ))}
+//         </div>
+//       </main>
+//     </div>
+//   );
+// };
+// export default ShopDelivery;
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Plus, Trash2, Edit2, Printer } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { shopSupplyService, ShopSupplyRequestDTO, ShopSupplyItemDTO, ShopSupplyResponseDTO } from "@/services/shop-supply.service";
+import { productService, ProductDTO } from "@/services/product.service";
+import { shopService, ShopDTO } from "@/services/shop.service";
+import { driverService, DriverDTO } from "@/services/driver.service";
+import { vehicleService, VehicleDTO } from "@/services/vehicle.service";
+import { printBill } from "@/utils/printBill"; 
+
+interface ProductItem {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+}
+
+const ShopDelivery = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  // --- AUTH CONTEXT ---
+  // In a real app, this comes from your AuthProvider
+  // Change role to 'SALESMAN' to test the salesman view!
+  const getCurrentUser = () => {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : { userId: "USR001", role: "OWNER" }; 
+  };
+  
+  const currentUser = getCurrentUser();
+  const isAdmin = currentUser?.role === 'OWNER'; // Only Owner sees the Create Form
+
+  const [shopId, setShopId] = useState("");
+  const [driverId, setDriverId] = useState(""); 
+  const [products, setProducts] = useState<ProductItem[]>([
+    { id: "1", productId: "", productName: "", quantity: 0, price: 0 }
+  ]);
+  
+  const [availableProducts, setAvailableProducts] = useState<ProductDTO[]>([]);
+  const [availableShops, setAvailableShops] = useState<ShopDTO[]>([]);
+  const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
+  const [availableVehicles, setAvailableVehicles] = useState<VehicleDTO[]>([]);
+  const [vehicleId, setVehicleId] = useState("");
+  const [savedDeliveries, setSavedDeliveries] = useState<ShopSupplyResponseDTO[]>([]);
+  
+  // State to track editing
+  const [editingDeliveryId, setEditingDeliveryId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    loadAllData();
+  }, []);
+
+  const loadAllData = async () => {
+    await Promise.all([
+      loadProducts(),
+      loadShops(),
+      loadDrivers(),
+      loadVehicles(),
+      loadDeliveries()
+    ]);
+  };
+
+  // ... (Load functions for Products, Shops, Drivers, Vehicles remain the same) ...
+  const loadProducts = async () => { try { setAvailableProducts(await productService.list()); } catch (e) {} };
+  const loadShops = async () => { try { setAvailableShops(await shopService.list()); } catch (e) {} };
+  const loadDrivers = async () => { try { setAvailableDrivers(await driverService.list()); } catch (e) {} };
+  const loadVehicles = async () => { try { setAvailableVehicles(await vehicleService.list()); } catch (e) {} };
+  const loadDeliveries = async () => { try { setSavedDeliveries(await shopSupplyService.list()); } catch (e) {} };
+
+  const addProduct = () => {
+    setProducts([...products, { id: Date.now().toString(), productId: "", productName: "", quantity: 0, price: 0 }]);
+  };
+
+  const updateProduct = (id: string, field: keyof ProductItem, value: any) => {
+    setProducts(products.map(product => {
+      if (product.id === id) {
+        if (field === 'productId' && typeof value === 'string') {
+          const selectedProduct = availableProducts.find(p => p.proId === value);
+          if (selectedProduct) {
+            return { ...product, productId: value, productName: selectedProduct.name, price: selectedProduct.unitPrice };
+          }
+        }
+        return { ...product, [field]: value };
+      }
+      return product;
+    }));
+  };
+
+  const removeProduct = (id: string) => {
+    if (products.length > 1) {
+      setProducts(products.filter(product => product.id !== id));
+    }
+  };
+
+  const handleSave = async () => {
+    if (!shopId || !driverId || !vehicleId) {
+      toast({ title: "Error", description: "Please select Shop, Driver and Vehicle", variant: "destructive" });
+      return;
+    }
+
+    const validItems = products.filter(p => p.productId && p.quantity > 0);
+    
+    // Only Admin can create assignments (0 products)
+    if (validItems.length === 0 && !isAdmin) {
+       toast({ title: "Error", description: "Salesman must add products to complete delivery", variant: "destructive" });
+       return;
+    }
+    
+    if (validItems.length === 0 && isAdmin && !confirm("Save as Assignment (No products)?")) {
+        return;
+    }
+
+    setIsLoading(true);
+    try {
+      const items: ShopSupplyItemDTO[] = validItems.map(p => ({
+        productId: p.productId,
+        productName: p.productName,
+        quantity: p.quantity,
+        price: p.price,
+        shopId: shopId,
+      }));
+
+      const requestBody: ShopSupplyRequestDTO = {
+        shopId,
+        salesmanId: currentUser.userId, // When Salesman saves, they claim the record
+        driverId: driverId,
+        vehicleId,
+        items,
+      };
+
+      if (editingDeliveryId) {
+        await shopSupplyService.update(editingDeliveryId, requestBody);
+        toast({ title: "Success", description: "Delivery Completed & Saved" });
+      } else {
+        await shopSupplyService.create(requestBody);
+        toast({ title: "Success", description: "Assignment Created" });
+      }
+
+      await loadDeliveries();
+      resetForm();
+    } catch (error: any) {
+      console.error("Error saving:", error);
+      toast({ title: "Error", description: "Failed to save.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEdit = (delivery: ShopSupplyResponseDTO) => {
+    setEditingDeliveryId(delivery.supplyId);
+    setShopId(delivery.shopId || "");
+    setDriverId(delivery.driverId || ""); 
+    setVehicleId(delivery.vehicleId || "");
+
+    if (delivery.items && delivery.items.length > 0) {
+      setProducts(delivery.items.map((item, index) => ({
+        id: index.toString(),
+        productId: item.productId,
+        productName: item.productName || "",
+        quantity: item.quantity,
+        price: item.price || 0,
+      })));
+    } else {
+      setProducts([{ id: "1", productId: "", productName: "", quantity: 0, price: 0 }]);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (deliveryId: string) => {
+    if (!confirm("Are you sure?")) return;
+    setIsLoading(true);
+    try {
+      await shopSupplyService.delete(deliveryId);
+      toast({ title: "Success", description: "Deleted successfully" });
+      await loadDeliveries();
+    } catch (error) {
+        toast({ title: "Error", description: "Failed to delete", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setEditingDeliveryId(null);
+    setShopId("");
+    setDriverId("");
+    setVehicleId("");
+    setProducts([{ id: "1", productId: "", productName: "", quantity: 0, price: 0 }]);
+  };
+
+  // --- FILTERING LOGIC ---
+  const visibleDeliveries = savedDeliveries.filter(delivery => {
+    // Admin sees everything
+    if (isAdmin) return true;
+    
+    // Salesman sees:
+    // 1. Pending Assignments (0 items)
+    // 2. Their own completed deliveries
+    const isAssignment = delivery.items.length === 0;
+    const isMyDelivery = delivery.salesmanId === currentUser.userId;
+    return isAssignment || isMyDelivery;
+  });
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-bakery-cream to-bakery-warm">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-border shadow-[var(--shadow-soft)]">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Button variant="ghost" onClick={() => navigate("/dashboard")}> <ArrowLeft className="h-4 w-4" /> </Button>
+            <h1 className="text-xl font-bold text-bakery-brown">Deliver to Shops</h1>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        
+        {/* FORM: Only show if Admin OR if Editing an existing Assignment */}
+        {(isAdmin || editingDeliveryId) && (
+        <div className="flex justify-center">
+          <Card className="w-full max-w-2xl">
+            <CardHeader>
+              <CardTitle>
+                {editingDeliveryId ? "Fulfill Assignment" : "Assign New Delivery"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Shop</Label>
+                  <Select value={shopId} onValueChange={setShopId} disabled={isLoading || (!isAdmin && !!editingDeliveryId)}>
+                    <SelectTrigger><SelectValue placeholder="Select shop" /></SelectTrigger>
+                    <SelectContent>
+                      {availableShops.map((s) => (<SelectItem key={s.shopId} value={s.shopId!}>{s.shopName}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Driver</Label>
+                  <Select value={driverId} onValueChange={setDriverId} disabled={isLoading || (!isAdmin && !!editingDeliveryId)}>
+                    <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
+                    <SelectContent>
+                      {availableDrivers.map((d) => (<SelectItem key={d.driverId} value={d.driverId!}>{d.name}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <Label>Vehicle</Label>
+                <Select value={vehicleId} onValueChange={setVehicleId} disabled={isLoading || (!isAdmin && !!editingDeliveryId)}>
+                  <SelectTrigger><SelectValue placeholder="Select vehicle" /></SelectTrigger>
+                  <SelectContent>
+                    {availableVehicles.map((v) => (<SelectItem key={v.vehicleId} value={v.vehicleId!}>{v.vehicleNo}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3 mt-6">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-semibold">Products</Label>
+                  <Button onClick={addProduct} size="sm" variant="outline" disabled={isLoading}><Plus className="h-4 w-4 mr-1" /> Add</Button>
+                </div>
+                <div className="space-y-2">
+                  {products.map((product) => (
+                    <div key={product.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 border rounded-lg">
+                      <Select value={product.productId} onValueChange={(val) => updateProduct(product.id, "productId", val)} disabled={isLoading}>
+                        <SelectTrigger><SelectValue placeholder="Product" /></SelectTrigger>
+                        <SelectContent>{availableProducts.map((p) => (<SelectItem key={p.proId} value={p.proId!}>{p.name}</SelectItem>))}</SelectContent>
+                      </Select>
+                      <Input type="number" value={product.quantity} onChange={(e) => updateProduct(product.id, "quantity", Number(e.target.value))} placeholder="Qty" />
+                      <Input type="number" value={product.price} readOnly placeholder="Price" className="bg-muted"/>
+                      <div className="flex items-center gap-2">
+                         <Button variant="ghost" size="sm" onClick={() => removeProduct(product.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 mt-6 border-t pt-4">
+                <Button variant="outline" onClick={resetForm}>Cancel</Button>
+                <Button onClick={handleSave} disabled={isLoading}>
+                    {editingDeliveryId ? "Complete Delivery" : "Save Assignment"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        )}
+
+        {/* List */}
+        <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-bakery-brown">
+                {isAdmin ? "All Deliveries" : "My Assignments & Deliveries"}
+            </h2>
+            {visibleDeliveries.length === 0 ? (
+                <p className="text-muted-foreground">No records found.</p>
+            ) : (
+                visibleDeliveries.map((delivery) => (
+                <Card key={delivery.supplyId}>
+                    <div className="p-4 bg-gray-50 flex justify-between items-start">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-bold text-lg">{delivery.shopName}</h3>
+                                {delivery.items.length === 0 ? (
+                                    <span className="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded font-bold">ASSIGNED - PENDING</span>
+                                ) : (
+                                    <span className="bg-green-200 text-green-800 text-xs px-2 py-1 rounded font-bold">COMPLETED</span>
+                                )}
+                            </div>
+                            <p className="text-sm text-gray-600">{delivery.supplyDate} | Driver: {delivery.driverName} | Vehicle: {delivery.vehicleNo}</p>
+                            
+                            {delivery.items.length > 0 && (
+                            <div className="mt-2 text-sm bg-white p-2 rounded border">
+                                {delivery.items.map((item, i) => (
+                                    <div key={i} className="flex justify-between">
+                                        <span>{item.productName} x {item.quantity}</span>
+                                        <span>Rs. {(item.quantity * (item.price || 0)).toFixed(2)}</span>
+                                    </div>
+                                ))}
+                                <div className="border-t mt-1 pt-1 font-bold text-right">
+                                    Total: Rs. {Number(delivery.totalAmount || 0).toFixed(2)}
+                                </div>
+                            </div>
+                            )}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            {/* Salesman can only Print completed bills */}
+                            {delivery.items.length > 0 && (
+                                <Button size="sm" variant="secondary" onClick={() => printBill(delivery)}><Printer className="h-4 w-4" /></Button>
+                            )}
+                            
+                            {/* Edit Button: Always for Admin, or for Salesman if it's Pending */}
+                            {(isAdmin || delivery.items.length === 0) && (
+                                <Button size="sm" variant="outline" onClick={() => handleEdit(delivery)}>
+                                    {delivery.items.length === 0 ? "Fulfill" : <Edit2 className="h-4 w-4" />}
+                                </Button>
+                            )}
+                            
+                            {/* Delete Button: Admin Only */}
+                            {isAdmin && (
+                                <Button size="sm" variant="destructive" onClick={() => handleDelete(delivery.supplyId)}><Trash2 className="h-4 w-4" /></Button>
+                            )}
+                        </div>
+                    </div>
+                </Card>
+                ))
+            )}
+        </div>
+      </main>
+    </div>
+  );
+};
+export default ShopDelivery;

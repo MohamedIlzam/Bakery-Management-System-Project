@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional // Apply default transactionality
+@Transactional
 public class SaleServiceImpl implements SaleService {
 
     private final SaleRepository saleRepository;
@@ -59,9 +59,9 @@ public class SaleServiceImpl implements SaleService {
         sale.setSaleId(IdGenerator.saleId());
         sale.setShop(shop);
         sale.setVehicle(vehicle);
-        sale.setDriver(driver); // Set the driver
-        sale.setSaleDate(LocalDate.now()); // Set the correct field
-        sale.setPaymentMethod("CASH"); // Set default
+        sale.setDriver(driver);
+        sale.setSaleDate(LocalDate.now());
+        sale.setPaymentMethod("CASH");
 
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<SaleDetail> saleDetails = new ArrayList<>();
@@ -152,7 +152,7 @@ public class SaleServiceImpl implements SaleService {
         dto.getSaleDate().ifPresent(sale::setSaleDate);
 
         dto.getShopName().ifPresent(shopName -> {
-            Shop shop = shopRepository.findByShopName(shopName) // Use correct method
+            Shop shop = shopRepository.findByShopName(shopName)
                     .orElseThrow(() -> new ResourceNotFoundException("Shop not found: " + shopName));
             sale.setShop(shop);
         });
@@ -167,18 +167,18 @@ public class SaleServiceImpl implements SaleService {
             sale.setDriver(driver);
         });
 
-        // Update items (Replace logic)
+        // Update items
         dto.getItems().ifPresent(newItemsList -> {
             BigDecimal newTotalAmount = BigDecimal.ZERO;
 
-            // 1. Manually delete old details
+            //  Manually delete old details
             List<SaleDetail> oldDetails = new ArrayList<>(sale.getSaleDetails());
             if (!oldDetails.isEmpty()) {
                 saleDetailRepository.deleteAll(oldDetails);
                 saleDetailRepository.flush(); // Force execution
             }
 
-            // 2. Create and add new details
+            // Create and add new details
             List<SaleDetail> newDetails = new ArrayList<>();
             for (SaleDTO item : newItemsList) {
                 Product product = productRepository.findByName(item.getProductName())
@@ -195,7 +195,7 @@ public class SaleServiceImpl implements SaleService {
                 newTotalAmount = newTotalAmount.add(subtotal);
                 newDetails.add(detail);
             }
-            // 3. Set new list and total
+            // Set new list and total
             sale.setSaleDetails(newDetails);
             sale.setTotalAmount(newTotalAmount);
         });
@@ -204,7 +204,7 @@ public class SaleServiceImpl implements SaleService {
         return convertToResponseDTO(updatedSale);
     }
 
-    // --- Public Helper Methods (as declared in SaleService interface) ---
+    //  Helper Methods
 
     @Override
     public SaleResponseDTO convertToResponseDTO(Sale sale) {

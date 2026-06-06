@@ -7,25 +7,67 @@ import com.example.KodikaraGroupBusinessManagementApplication.exception.Resource
 import com.example.KodikaraGroupBusinessManagementApplication.model.User;
 import com.example.KodikaraGroupBusinessManagementApplication.util.IdGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, @Lazy PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-    // --- C (Create Salesman) - Keep specific for now ---
+    // *** ADD THIS METHOD - Required by UserDetailsService ***
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // 1. Check if this method is being called repeatedly
+        System.out.println(">>> DEBUG: Entering loadUserByUsername for: " + username);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+
+        // 2. Check if the database retrieval worked
+        System.out.println(">>> DEBUG: User found in DB: " + user.getUsername());
+
+        String role = user.getRole();
+        if (role == null || role.trim().isEmpty()) {
+            role = "ROLE_SALESMAN";
+        } else {
+            // Map new clean role strings to Spring Security's expected authority strings
+            if ("Salesman".equalsIgnoreCase(role)) {
+                role = "ROLE_SALESMAN";
+            } else if ("Owner".equalsIgnoreCase(role) || "Admin".equalsIgnoreCase(role)) {
+                role = "ROLE_OWNER";
+            } else if ("Driver".equalsIgnoreCase(role)) {
+                role = "ROLE_DRIVER";
+            }
+        }
+
+        // 3. Check if we reach the end of the method
+        System.out.println(">>> DEBUG: returning UserDetails object...");
+
+        return org.springframework.security.core.userdetails.User
+                .withUsername(user.getUsername())
+                .password(user.getPassword())
+                .authorities(Collections.singletonList(new SimpleGrantedAuthority(role)))
+                .build();
+    }
+
+    // (Create Salesman)
     public User createSalesman(UserDTO userDTO) {
         if (userRepository.existsByUsername(userDTO.getUsername())) {
             throw new IllegalArgumentException("Username already registered");
@@ -34,23 +76,42 @@ public class UserService {
         newUser.setUserId(IdGenerator.userId());
         newUser.setUsername(userDTO.getUsername());
         newUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        newUser.setRole("ROLE_SALESMAN"); // Explicitly set role
+        
+        // Map the role back to DB/Spring Security compatible values
+        String role = userDTO.getRole();
+        if (role == null || role.trim().isEmpty()) {
+            role = "ROLE_SALESMAN";
+        } else {
+            if ("Salesman".equalsIgnoreCase(role)) {
+                role = "ROLE_SALESMAN";
+            } else if ("Owner".equalsIgnoreCase(role)) {
+                role = "ROLE_OWNER";
+            } else if ("Driver".equalsIgnoreCase(role)) {
+                role = "ROLE_DRIVER";
+            }
+        }
+        newUser.setRole(role);
         return userRepository.save(newUser);
     }
 
-    // --- R (Read) - Get All Users ---
-    public List<User> getAllUsers() { // Renamed
+    // Get All Users
+    public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    // --- R (Read) - Get One User by ID ---
-    public User getUserById(String userId) { // Renamed
+    // Get User By Role(For list down salesman)
+    public List<User> getUsersByRole(String role) {
+        return userRepository.findByRole(role);
+    }
+
+    // Get One User by ID
+    public User getUserById(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
     }
 
-    // --- U (Update) - Update User Details ---
-    public User updateUser(String userId, UserUpdateDTO userUpdateDTO) { // Renamed
+    // Update User Details
+    public User updateUser(String userId, UserUpdateDTO userUpdateDTO) {
         User userToUpdate = getUserById(userId);
 
         Optional<User> userWithNewUsername = userRepository.findByUsername(userUpdateDTO.getUsername());
@@ -64,11 +125,24 @@ public class UserService {
             userToUpdate.setPassword(passwordEncoder.encode(userUpdateDTO.getPassword()));
         }
 
+        // Update role if provided
+        if (userUpdateDTO.getRole() != null && !userUpdateDTO.getRole().isEmpty()) {
+            String role = userUpdateDTO.getRole();
+            if ("Salesman".equalsIgnoreCase(role)) {
+                role = "ROLE_SALESMAN";
+            } else if ("Owner".equalsIgnoreCase(role)) {
+                role = "ROLE_OWNER";
+            } else if ("Driver".equalsIgnoreCase(role)) {
+                role = "ROLE_DRIVER";
+            }
+            userToUpdate.setRole(role);
+        }
+
         return userRepository.save(userToUpdate);
     }
 
-    // --- D (Delete) - Delete a User ---
-    public void deleteUser(String userId) { // Renamed
+    // Delete a User
+    public void deleteUser(String userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("User not found with id: " + userId);
         }

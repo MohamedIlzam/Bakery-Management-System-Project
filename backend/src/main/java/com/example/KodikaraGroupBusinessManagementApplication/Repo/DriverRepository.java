@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface DriverRepository extends JpaRepository<Driver,String> {
-    Optional<Driver> findByName(String dname);
+    Optional<Driver> findByName(String name);
 }

@@ -12,8 +12,9 @@ public class UserUpdateDTO {
     // Password can be optional during an update
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
+    private String role;
 
-    // --- Getters and Setters ---
+    //Getters and Setters
     public String getUsername() {
         return username;
     }
@@ -29,4 +30,12 @@ public class UserUpdateDTO {
     public void setPassword(String password) {
         this.password = password;
     }
+    public String getRole() {
+        return role;
+    }
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+
 }
