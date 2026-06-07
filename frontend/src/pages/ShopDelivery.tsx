@@ -372,6 +372,7 @@ interface ProductItem {
   productId: string;
   productName: string;
   quantity: number;
+  returnQuantity: number;
   price: number;
 }
 
@@ -393,7 +394,7 @@ const ShopDelivery = () => {
   const [shopId, setShopId] = useState("");
   const [driverId, setDriverId] = useState(""); 
   const [products, setProducts] = useState<ProductItem[]>([
-    { id: "1", productId: "", productName: "", quantity: 0, price: 0 }
+    { id: "1", productId: "", productName: "", quantity: 0, returnQuantity: 0, price: 0 }
   ]);
   
   const [availableProducts, setAvailableProducts] = useState<ProductDTO[]>([]);
@@ -429,7 +430,7 @@ const ShopDelivery = () => {
   const loadDeliveries = async () => { try { setSavedDeliveries(await shopSupplyService.list()); } catch (e) {} };
 
   const addProduct = () => {
-    setProducts([...products, { id: Date.now().toString(), productId: "", productName: "", quantity: 0, price: 0 }]);
+    setProducts([...products, { id: Date.now().toString(), productId: "", productName: "", quantity: 0, returnQuantity: 0, price: 0 }]);
   };
 
   const updateProduct = (id: string, field: keyof ProductItem, value: any) => {
@@ -477,6 +478,7 @@ const ShopDelivery = () => {
         productId: p.productId,
         productName: p.productName,
         quantity: p.quantity,
+        returnQuantity: p.returnQuantity,
         price: p.price,
         shopId: shopId,
       }));
@@ -519,10 +521,11 @@ const ShopDelivery = () => {
         productId: item.productId,
         productName: item.productName || "",
         quantity: item.quantity,
+        returnQuantity: item.returnQuantity || 0,
         price: item.price || 0,
       })));
     } else {
-      setProducts([{ id: "1", productId: "", productName: "", quantity: 0, price: 0 }]);
+      setProducts([{ id: "1", productId: "", productName: "", quantity: 0, returnQuantity: 0, price: 0 }]);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -546,7 +549,7 @@ const ShopDelivery = () => {
     setShopId("");
     setDriverId("");
     setVehicleId("");
-    setProducts([{ id: "1", productId: "", productName: "", quantity: 0, price: 0 }]);
+    setProducts([{ id: "1", productId: "", productName: "", quantity: 0, returnQuantity: 0, price: 0 }]);
   };
 
   // --- FILTERING LOGIC ---
@@ -617,24 +620,50 @@ const ShopDelivery = () => {
               </div>
 
               <div className="space-y-3 mt-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <Label className="text-base font-semibold">Products</Label>
                   <Button onClick={addProduct} size="sm" variant="outline" disabled={isLoading}><Plus className="h-4 w-4 mr-1" /> Add</Button>
                 </div>
-                <div className="space-y-2">
-                  {products.map((product) => (
-                    <div key={product.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 border rounded-lg">
-                      <Select value={product.productId} onValueChange={(val) => updateProduct(product.id, "productId", val)} disabled={isLoading}>
-                        <SelectTrigger><SelectValue placeholder="Product" /></SelectTrigger>
-                        <SelectContent>{availableProducts.map((p) => (<SelectItem key={p.proId} value={p.proId!}>{p.name}</SelectItem>))}</SelectContent>
-                      </Select>
-                      <Input type="number" value={product.quantity} onChange={(e) => updateProduct(product.id, "quantity", Number(e.target.value))} placeholder="Qty" />
-                      <Input type="number" value={product.price} readOnly placeholder="Price" className="bg-muted"/>
-                      <div className="flex items-center gap-2">
-                         <Button variant="ghost" size="sm" onClick={() => removeProduct(product.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Product</th>
+                        <th className="px-4 py-3 font-medium">Sent Qty</th>
+                        <th className="px-4 py-3 font-medium">Return Qty</th>
+                        <th className="px-4 py-3 font-medium">Price (Rs.)</th>
+                        <th className="px-4 py-3 w-[50px]"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {products.map((product) => (
+                        <tr key={product.id} className="bg-white">
+                          <td className="p-3">
+                            <Select value={product.productId} onValueChange={(val) => updateProduct(product.id, "productId", val)} disabled={isLoading}>
+                              <SelectTrigger className="h-9"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent>{availableProducts.map((p) => (<SelectItem key={p.proId} value={p.proId!}>{p.name}</SelectItem>))}</SelectContent>
+                            </Select>
+                          </td>
+                          <td className="p-3">
+                            <Input type="number" min="0" value={product.quantity} onChange={(e) => updateProduct(product.id, "quantity", Math.max(0, Number(e.target.value)))} placeholder="0" className="h-9" />
+                          </td>
+                          <td className="p-3">
+                            <Input type="number" min="0" value={product.returnQuantity} onChange={(e) => updateProduct(product.id, "returnQuantity", Math.max(0, Number(e.target.value)))} placeholder="0" className="h-9" />
+                          </td>
+                          <td className="p-3">
+                            <Input type="number" min="0" step="0.01" value={product.price} onChange={(e) => updateProduct(product.id, "price", Math.max(0, Number(e.target.value)))} placeholder="0.00" className="h-9"/>
+                          </td>
+                          <td className="p-3 text-center">
+                            {products.length > 1 && (
+                              <Button variant="ghost" size="sm" onClick={() => removeProduct(product.id)} disabled={isLoading}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -675,8 +704,8 @@ const ShopDelivery = () => {
                             <div className="mt-2 text-sm bg-white p-2 rounded border">
                                 {delivery.items.map((item, i) => (
                                     <div key={i} className="flex justify-between">
-                                        <span>{item.productName} x {item.quantity}</span>
-                                        <span>Rs. {(item.quantity * (item.price || 0)).toFixed(2)}</span>
+                                        <span>{item.productName} (Sent: {item.quantity}, Ret: {item.returnQuantity || 0})</span>
+                                        <span>Rs. {((item.quantity - (item.returnQuantity || 0)) * (item.price || 0)).toFixed(2)}</span>
                                     </div>
                                 ))}
                                 <div className="border-t mt-1 pt-1 font-bold text-right">

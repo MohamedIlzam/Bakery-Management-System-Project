@@ -4,6 +4,7 @@ export interface ShopSupplyItemDTO {
   productId: string;
   productName: string;
   quantity: number;
+  returnQuantity?: number;
   price: number;
   shopId?: string;
 }

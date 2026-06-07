@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,7 +59,7 @@ public class FairDeliveryService {
                 item.setFairDelivery(fairDelivery);
                 item.setProduct(product);
                 item.setQtySent(itemDto.getQtySent());
-                item.setUnitPrice(itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : BigDecimal.ZERO);
+                item.setUnitPrice(itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : product.getUnitPrice());
                 item.setQtyRemaining(itemDto.getQtyRemaining()); // Uses 0 by default, or the user provided quantity
                 items.add(item);
             }
@@ -181,15 +182,35 @@ public class FairDeliveryService {
             delivery.setVehicle(vehicle);
         }
 
-        if (dto.getItems() != null && !dto.getItems().isEmpty()) {
+        if (dto.getItems() != null) {
+            // Remove items that are no longer in the DTO
+            List<String> incomingProductIds = dto.getItems().stream()
+                    .map(FairDeliveryItemDTO::getProductId)
+                    .collect(Collectors.toList());
+            delivery.getItems().removeIf(existingItem -> !incomingProductIds.contains(existingItem.getProduct().getProId()));
+
             for (FairDeliveryItemDTO itemDto : dto.getItems()) {
-                delivery.getItems().stream()
+                Optional<FairDeliveryItem> existingItemOpt = delivery.getItems().stream()
                         .filter(existingItem -> existingItem.getProduct().getProId().equals(itemDto.getProductId()))
-                        .findFirst()
-                        .ifPresent(existingItem -> {
-                            existingItem.setQtySent(itemDto.getQtySent());
-                            existingItem.setQtyRemaining(itemDto.getQtyRemaining());
-                        });
+                        .findFirst();
+
+                if (existingItemOpt.isPresent()) {
+                    FairDeliveryItem existingItem = existingItemOpt.get();
+                    existingItem.setQtySent(itemDto.getQtySent());
+                    existingItem.setQtyRemaining(itemDto.getQtyRemaining());
+                    existingItem.setUnitPrice(itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : existingItem.getProduct().getUnitPrice());
+                } else {
+                    Product product = productRepository.findById(itemDto.getProductId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemDto.getProductId()));
+                    FairDeliveryItem newItem = new FairDeliveryItem();
+                    newItem.setItemId(IdGenerator.generate("FITE"));
+                    newItem.setFairDelivery(delivery);
+                    newItem.setProduct(product);
+                    newItem.setQtySent(itemDto.getQtySent());
+                    newItem.setUnitPrice(itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : product.getUnitPrice());
+                    newItem.setQtyRemaining(itemDto.getQtyRemaining());
+                    delivery.getItems().add(newItem);
+                }
             }
         }
         BigDecimal newProfit = calculateProfitInternal(delivery);

@@ -437,8 +437,8 @@ const FairDelivery = () => {
                       <TableRow>
                         <TableHead>Product</TableHead>
                         <TableHead>Sent Qty</TableHead>
-                        <TableHead>Price (Rs.)</TableHead>
                         <TableHead>Returned Qty</TableHead>
+                        <TableHead>Price (Rs.)</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -482,10 +482,10 @@ const FairDelivery = () => {
                             <Input
                               type="number"
                               min="0"
-                              value={product.price}
-                              readOnly
-                              placeholder="Auto"
-                              className="h-9 bg-muted"
+                              value={product.returnedQuantity}
+                              onChange={(e) => updateProduct(product.id, "returnedQuantity", Math.max(0, Number(e.target.value)))}
+                              placeholder="0"
+                              className="h-9"
                               disabled={isLoading}
                             />
                           </TableCell>
@@ -493,9 +493,10 @@ const FairDelivery = () => {
                             <Input
                               type="number"
                               min="0"
-                              value={product.returnedQuantity}
-                              onChange={(e) => updateProduct(product.id, "returnedQuantity", Math.max(0, Number(e.target.value)))}
-                              placeholder="0"
+                              step="0.01"
+                              value={product.price}
+                              onChange={(e) => updateProduct(product.id, "price", Math.max(0, Number(e.target.value)))}
+                              placeholder="0.00"
                               className="h-9"
                               disabled={isLoading}
                             />

@@ -1,10 +1,6 @@
 package com.example.KodikaraGroupBusinessManagementApplication.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -35,6 +31,8 @@ public class ShopSupplyItem {
 
     @Column(name = "qty_supplied", nullable = false)
     private int qtySupplied;
+    @Column(name = "qty_returned", nullable = false)
+    private int qtyReturned = 0;
     @Column(name = "unit_price", precision = 10, scale = 2, nullable = false)
     private BigDecimal unitPrice = BigDecimal.ZERO;
 }
