@@ -63,7 +63,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/shop-supply-reports/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
                         //Owner Only Manage Data
                         .requestMatchers("/api/users/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/drivers/**").hasAnyAuthority("ROLE_SALESMAN", "ROLE_DRIVER", "ROLE_OWNER", "ADMIN")
                         .requestMatchers("/api/drivers/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/shops/**").hasAnyAuthority("ROLE_SALESMAN", "ROLE_DRIVER", "ROLE_OWNER", "ADMIN")
                         .requestMatchers("/api/shops/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
                         //Salesman should be able to see products(not create/delete/update)
                         .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyAuthority("ROLE_SALESMAN", "ROLE_DRIVER", "ROLE_OWNER", "ADMIN")

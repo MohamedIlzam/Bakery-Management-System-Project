@@ -12,10 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 import { productService, ProductDTO } from "@/services/product.service";
 import { shopService, ShopDTO } from "@/services/shop.service";
 import { salesmanService, SalesmanDTO } from "@/services/salesman.service";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Manage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { userRole, loading } = useAuth();
 
   // Products State
   const [products, setProducts] = useState<ProductDTO[]>([]);
@@ -53,10 +55,16 @@ const Manage = () => {
 
   // Load data on mount
   useEffect(() => {
-    loadProducts();
-    loadShops();
-    loadSalesmen();
-  }, []);
+    if (!loading && !['ROLE_OWNER', 'ADMIN'].includes(userRole || '')) {
+      navigate("/dashboard");
+      return;
+    }
+    if (['ROLE_OWNER', 'ADMIN'].includes(userRole || '')) {
+      loadProducts();
+      loadShops();
+      loadSalesmen();
+    }
+  }, [loading, userRole, navigate]);
 
   // ===== PRODUCT FUNCTIONS =====
   const loadProducts = async () => {

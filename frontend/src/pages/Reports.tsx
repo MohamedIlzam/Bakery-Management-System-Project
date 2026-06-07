@@ -18,10 +18,12 @@ import {
 import { fairDeliveryReportService, FairDeliveryReportDTO } from "@/services/fair-delivery-report.service";
 import { shopSupplyReportService, ShopSupplyReportDTO } from "@/services/shop-supply-report.service";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Reports = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { userRole, loading } = useAuth();
 
   // Fair Delivery Reports
   const [fairReports, setFairReports] = useState<any[]>([]); 
@@ -36,9 +38,15 @@ const Reports = () => {
   const [isLoadingShop, setIsLoadingShop] = useState(false);
 
   useEffect(() => {
-    loadFairReports();
-    loadShopReports();
-  }, []);
+    if (!loading && !['ROLE_OWNER', 'ADMIN'].includes(userRole || '')) {
+      navigate("/dashboard");
+      return;
+    }
+    if (['ROLE_OWNER', 'ADMIN'].includes(userRole || '')) {
+      loadFairReports();
+      loadShopReports();
+    }
+  }, [loading, userRole, navigate]);
 
   const loadFairReports = async () => {
     try {
