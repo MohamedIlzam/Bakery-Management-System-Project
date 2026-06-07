@@ -300,57 +300,6 @@
 
 //               <div className="flex justify-end space-x-2 mt-6 border-t pt-4">
 //                 <Button variant="outline" onClick={resetForm}>Clear</Button>
-//                 <Button onClick={handleSave} disabled={isLoading}>
-//                     {editingDeliveryId ? "Update" : "Save"}
-//                 </Button>
-//               </div>
-//             </CardContent>
-//           </Card>
-//         </div>
-
-//         {/* List */}
-//         <div className="space-y-4">
-//             <h2 className="text-xl font-semibold text-bakery-brown">Recent Deliveries</h2>
-//             {savedDeliveries.map((delivery) => (
-//               <Card key={delivery.supplyId}>
-//                 <div className="p-4 bg-gray-50 flex justify-between items-start">
-//                     <div className="space-y-1">
-//                         <div className="flex items-center gap-2">
-//                             <h3 className="font-bold text-lg">{delivery.shopName}</h3>
-//                             {delivery.items.length === 0 && <span className="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded">ASSIGNED</span>}
-//                         </div>
-//                         <p className="text-sm text-gray-600">{delivery.supplyDate} | Driver: {delivery.driverName} | Vehicle: {delivery.vehicleNo}</p>
-                        
-//                         {delivery.items.length > 0 && (
-//                           <div className="mt-2 text-sm bg-white p-2 rounded border">
-//                               {delivery.items.map((item, i) => (
-//                                   <div key={i} className="flex justify-between">
-//                                     <span>{item.productName} x {item.quantity}</span>
-//                                     <span>Rs. {(item.quantity * (item.price || 0)).toFixed(2)}</span>
-//                                   </div>
-//                               ))}
-//                               <div className="border-t mt-1 pt-1 font-bold text-right">
-//                                 Total: Rs. {Number(delivery.totalAmount || 0).toFixed(2)}
-//                               </div>
-//                           </div>
-//                         )}
-//                     </div>
-//                     <div className="flex flex-col gap-2">
-//                         {delivery.items.length > 0 && 
-//                             <Button size="sm" variant="secondary" onClick={() => printBill(delivery)}><Printer className="h-4 w-4" /></Button>
-//                         }
-//                         <Button size="sm" variant="outline" onClick={() => handleEdit(delivery)}><Edit2 className="h-4 w-4" /></Button>
-//                         <Button size="sm" variant="destructive" onClick={() => handleDelete(delivery.supplyId)}><Trash2 className="h-4 w-4" /></Button>
-//                     </div>
-//                 </div>
-//               </Card>
-//             ))}
-//         </div>
-//       </main>
-//     </div>
-//   );
-// };
-// export default ShopDelivery;
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -380,16 +329,13 @@ const ShopDelivery = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // --- AUTH CONTEXT ---
-  // In a real app, this comes from your AuthProvider
-  // Change role to 'SALESMAN' to test the salesman view!
   const getCurrentUser = () => {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : { userId: "USR001", role: "OWNER" }; 
   };
   
   const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.role === 'OWNER'; // Only Owner sees the Create Form
+  const isAdmin = currentUser?.role === 'OWNER';
 
   const [shopId, setShopId] = useState("");
   const [driverId, setDriverId] = useState(""); 
@@ -404,9 +350,10 @@ const ShopDelivery = () => {
   const [vehicleId, setVehicleId] = useState("");
   const [savedDeliveries, setSavedDeliveries] = useState<ShopSupplyResponseDTO[]>([]);
   
-  // State to track editing
   const [editingDeliveryId, setEditingDeliveryId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [filterShopId, setFilterShopId] = useState<string>("all");
 
   useEffect(() => {
     loadAllData();
@@ -422,7 +369,6 @@ const ShopDelivery = () => {
     ]);
   };
 
-  // ... (Load functions for Products, Shops, Drivers, Vehicles remain the same) ...
   const loadProducts = async () => { try { setAvailableProducts(await productService.list()); } catch (e) {} };
   const loadShops = async () => { try { setAvailableShops(await shopService.list()); } catch (e) {} };
   const loadDrivers = async () => { try { setAvailableDrivers(await driverService.list()); } catch (e) {} };
@@ -462,13 +408,7 @@ const ShopDelivery = () => {
 
     const validItems = products.filter(p => p.productId && p.quantity > 0);
     
-    // Only Admin can create assignments (0 products)
-    if (validItems.length === 0 && !isAdmin) {
-       toast({ title: "Error", description: "Salesman must add products to complete delivery", variant: "destructive" });
-       return;
-    }
-    
-    if (validItems.length === 0 && isAdmin && !confirm("Save as Assignment (No products)?")) {
+    if (validItems.length === 0 && !confirm("Save as Assignment (No products)?")) {
         return;
     }
 
@@ -485,7 +425,7 @@ const ShopDelivery = () => {
 
       const requestBody: ShopSupplyRequestDTO = {
         shopId,
-        salesmanId: currentUser.userId, // When Salesman saves, they claim the record
+        salesmanId: currentUser.userId,
         driverId: driverId,
         vehicleId,
         items,
@@ -552,14 +492,11 @@ const ShopDelivery = () => {
     setProducts([{ id: "1", productId: "", productName: "", quantity: 0, returnQuantity: 0, price: 0 }]);
   };
 
-  // --- FILTERING LOGIC ---
   const visibleDeliveries = savedDeliveries.filter(delivery => {
-    // Admin sees everything
+    if (filterShopId !== "all" && delivery.shopId !== filterShopId) {
+        return false;
+    }
     if (isAdmin) return true;
-    
-    // Salesman sees:
-    // 1. Pending Assignments (0 items)
-    // 2. Their own completed deliveries
     const isAssignment = delivery.items.length === 0;
     const isMyDelivery = delivery.salesmanId === currentUser.userId;
     return isAssignment || isMyDelivery;
@@ -578,8 +515,6 @@ const ShopDelivery = () => {
 
       <main className="container mx-auto px-4 py-8 space-y-8">
         
-        {/* FORM: Only show if Admin OR if Editing an existing Assignment */}
-        {(isAdmin || editingDeliveryId) && (
         <div className="flex justify-center">
           <Card className="w-full max-w-2xl">
             <CardHeader>
@@ -591,7 +526,7 @@ const ShopDelivery = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Shop</Label>
-                  <Select value={shopId} onValueChange={setShopId} disabled={isLoading || (!isAdmin && !!editingDeliveryId)}>
+                  <Select value={shopId} onValueChange={setShopId} disabled={isLoading}>
                     <SelectTrigger><SelectValue placeholder="Select shop" /></SelectTrigger>
                     <SelectContent>
                       {availableShops.map((s) => (<SelectItem key={s.shopId} value={s.shopId!}>{s.shopName}</SelectItem>))}
@@ -600,7 +535,7 @@ const ShopDelivery = () => {
                 </div>
                 <div>
                   <Label>Driver</Label>
-                  <Select value={driverId} onValueChange={setDriverId} disabled={isLoading || (!isAdmin && !!editingDeliveryId)}>
+                  <Select value={driverId} onValueChange={setDriverId} disabled={isLoading}>
                     <SelectTrigger><SelectValue placeholder="Select driver" /></SelectTrigger>
                     <SelectContent>
                       {availableDrivers.map((d) => (<SelectItem key={d.driverId} value={d.driverId!}>{d.name}</SelectItem>))}
@@ -611,7 +546,7 @@ const ShopDelivery = () => {
               
               <div>
                 <Label>Vehicle</Label>
-                <Select value={vehicleId} onValueChange={setVehicleId} disabled={isLoading || (!isAdmin && !!editingDeliveryId)}>
+                <Select value={vehicleId} onValueChange={setVehicleId} disabled={isLoading}>
                   <SelectTrigger><SelectValue placeholder="Select vehicle" /></SelectTrigger>
                   <SelectContent>
                     {availableVehicles.map((v) => (<SelectItem key={v.vehicleId} value={v.vehicleId!}>{v.vehicleNo}</SelectItem>))}
@@ -676,17 +611,28 @@ const ShopDelivery = () => {
             </CardContent>
           </Card>
         </div>
-        )}
 
-        {/* List */}
         <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-bakery-brown">
-                {isAdmin ? "All Deliveries" : "My Assignments & Deliveries"}
-            </h2>
-            {visibleDeliveries.length === 0 ? (
-                <p className="text-muted-foreground">No records found.</p>
-            ) : (
-                visibleDeliveries.map((delivery) => (
+          <div className="flex justify-between items-center bg-white/50 p-4 rounded-xl border border-white/60 shadow-sm backdrop-blur-sm">
+            <h2 className="text-xl font-semibold text-bakery-brown">Saved Deliveries ({visibleDeliveries.length})</h2>
+            <div className="flex items-center space-x-2">
+              <Label className="text-sm font-medium text-bakery-brown whitespace-nowrap">Filter by Shop:</Label>
+              <Select value={filterShopId} onValueChange={setFilterShopId}>
+                <SelectTrigger className="w-[200px] bg-white">
+                  <SelectValue placeholder="All Shops" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Shops</SelectItem>
+                  {availableShops.map((s) => (
+                    <SelectItem key={s.shopId} value={s.shopId!}>{s.shopName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {visibleDeliveries.length > 0 ? (
+            visibleDeliveries.map((delivery) => (
                 <Card key={delivery.supplyId}>
                     <div className="p-4 bg-gray-50 flex justify-between items-start">
                         <div className="space-y-1">
@@ -715,27 +661,26 @@ const ShopDelivery = () => {
                             )}
                         </div>
                         <div className="flex flex-col gap-2">
-                            {/* Salesman can only Print completed bills */}
                             {delivery.items.length > 0 && (
                                 <Button size="sm" variant="secondary" onClick={() => printBill(delivery)}><Printer className="h-4 w-4" /></Button>
                             )}
                             
-                            {/* Edit Button: Always for Admin, or for Salesman if it's Pending */}
-                            {(isAdmin || delivery.items.length === 0) && (
-                                <Button size="sm" variant="outline" onClick={() => handleEdit(delivery)}>
-                                    {delivery.items.length === 0 ? "Fulfill" : <Edit2 className="h-4 w-4" />}
-                                </Button>
-                            )}
+                            <Button size="sm" variant="outline" onClick={() => handleEdit(delivery)}>
+                                {delivery.items.length === 0 ? "Fulfill" : <Edit2 className="h-4 w-4" />}
+                            </Button>
                             
-                            {/* Delete Button: Admin Only */}
                             {isAdmin && (
                                 <Button size="sm" variant="destructive" onClick={() => handleDelete(delivery.supplyId)}><Trash2 className="h-4 w-4" /></Button>
                             )}
                         </div>
                     </div>
                 </Card>
-                ))
-            )}
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground bg-white/50 rounded-xl border border-dashed">
+              No deliveries found matching your filter.
+            </div>
+          )}
         </div>
       </main>
     </div>
