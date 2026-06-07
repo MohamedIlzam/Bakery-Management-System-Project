@@ -90,9 +90,26 @@ public class ShopSupplyService {
         }
 
         if (dto.getItems() != null) {
-            supply.getItems().clear();
+            // Remove items that are no longer in the DTO
+            List<String> incomingKeys = dto.getItems().stream()
+                    .map(item -> item.getProductId() + "-" + item.getShopId())
+                    .collect(Collectors.toList());
+            supply.getItems().removeIf(existingItem -> !incomingKeys.contains(existingItem.getProduct().getProId() + "-" + existingItem.getShop().getShopId()));
+
             for (ShopSupplyItemDTO itemDto : dto.getItems()) {
-                supply.getItems().add(mapItemDTOToEntity(itemDto, supply));
+                java.util.Optional<ShopSupplyItem> existingItemOpt = supply.getItems().stream()
+                        .filter(existingItem -> existingItem.getProduct().getProId().equals(itemDto.getProductId())
+                                             && existingItem.getShop().getShopId().equals(itemDto.getShopId()))
+                        .findFirst();
+
+                if (existingItemOpt.isPresent()) {
+                    ShopSupplyItem existingItem = existingItemOpt.get();
+                    existingItem.setQtySupplied(itemDto.getQuantity());
+                    existingItem.setQtyReturned(itemDto.getReturnQuantity());
+                    existingItem.setUnitPrice(itemDto.getPrice() != null ? itemDto.getPrice() : existingItem.getProduct().getUnitPrice());
+                } else {
+                    supply.getItems().add(mapItemDTOToEntity(itemDto, supply));
+                }
             }
         }
 
