@@ -306,7 +306,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Plus, Trash2, Edit2, Printer } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Edit2, Printer, Wallet } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { shopSupplyService, ShopSupplyRequestDTO, ShopSupplyItemDTO, ShopSupplyResponseDTO } from "@/services/shop-supply.service";
@@ -356,6 +357,42 @@ const ShopDelivery = () => {
   
   const [filterShopId, setFilterShopId] = useState<string>("all");
 
+  // Pagination and Accordion State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [paymentDeliveryId, setPaymentDeliveryId] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+
+  const handlePaymentSubmit = async () => {
+    if (!paymentDeliveryId || !paymentAmount || isNaN(Number(paymentAmount)) || Number(paymentAmount) <= 0) {
+      toast({ title: "Error", description: "Please enter a valid payment amount", variant: "destructive" });
+      return;
+    }
+    
+    setIsSubmittingPayment(true);
+    try {
+      await shopSupplyService.addPayment(paymentDeliveryId, Number(paymentAmount));
+      toast({ title: "Success", description: "Payment recorded successfully" });
+      setPaymentModalOpen(false);
+      setPaymentAmount("");
+      setPaymentDeliveryId(null);
+      loadDeliveries();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.response?.data?.message || "Payment failed", variant: "destructive" });
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setExpandedRow(null);
+  }, [filterShopId]);
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -374,7 +411,15 @@ const ShopDelivery = () => {
   const loadShops = async () => { try { setAvailableShops(await shopService.list()); } catch (e) {} };
   const loadDrivers = async () => { try { setAvailableDrivers(await driverService.list()); } catch (e) {} };
   const loadVehicles = async () => { try { setAvailableVehicles(await vehicleService.list()); } catch (e) {} };
-  const loadDeliveries = async () => { try { setSavedDeliveries(await shopSupplyService.list()); } catch (e) {} };
+  const loadDeliveries = async () => { 
+    try { 
+      const data = await shopSupplyService.list();
+      setSavedDeliveries(data.sort((a, b) => {
+        const dateDiff = new Date(b.supplyDate || '').getTime() - new Date(a.supplyDate || '').getTime();
+        return dateDiff !== 0 ? dateDiff : (b.supplyId || '').localeCompare(a.supplyId || '');
+      }));
+    } catch (e) {} 
+  };
 
   const addProduct = () => {
     setProducts([...products, { id: Date.now().toString(), productId: "", productName: "", quantity: 0, returnQuantity: 0, expiredQuantity: 0, price: 0 }]);
@@ -638,58 +683,145 @@ const ShopDelivery = () => {
             </div>
           </div>
           
-          {visibleDeliveries.length > 0 ? (
-            visibleDeliveries.map((delivery) => (
-                <Card key={delivery.supplyId}>
-                    <div className="p-4 bg-gray-50 flex justify-between items-start">
-                        <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-bold text-lg">{delivery.shopName}</h3>
-                                {delivery.items.length === 0 ? (
-                                    <span className="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded font-bold">ASSIGNED - PENDING</span>
-                                ) : (
-                                    <span className="bg-green-200 text-green-800 text-xs px-2 py-1 rounded font-bold">COMPLETED</span>
-                                )}
-                            </div>
-                            <p className="text-sm text-gray-600">{delivery.supplyDate} | Driver: {delivery.driverName} | Vehicle: {delivery.vehicleNo}</p>
-                            
-                            {delivery.items.length > 0 && (
-                            <div className="mt-2 text-sm bg-white p-2 rounded border">
-                                {delivery.items.map((item, i) => (
-                                    <div key={i} className="flex justify-between">
-                                        <span>{item.productName} (Sent: {item.quantity}, Ret: {item.returnQuantity || 0}, Exp: {item.expiredQuantity || 0})</span>
-                                        <span>Rs. {((item.quantity - (item.returnQuantity || 0) - (item.expiredQuantity || 0)) * (item.price || 0)).toFixed(2)}</span>
+          {(() => {
+            const totalPages = Math.ceil(visibleDeliveries.length / itemsPerPage);
+            const paginatedDeliveries = visibleDeliveries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+            return (
+              <>
+                {paginatedDeliveries.length > 0 ? (
+                  paginatedDeliveries.map((delivery) => {
+                    const isExpanded = expandedRow === delivery.supplyId;
+                    return (
+                        <Card key={delivery.supplyId} className="overflow-hidden border border-border shadow-sm">
+                            <div 
+                              className="p-4 bg-gray-50 flex justify-between items-center cursor-pointer hover:bg-black/5 transition-colors"
+                              onClick={() => setExpandedRow(isExpanded ? null : delivery.supplyId)}
+                            >
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-bold text-lg">{delivery.shopName}</h3>
+                                        {delivery.paymentStatus === 'COMPLETED' ? (
+                                            <span className="bg-green-200 text-green-800 text-xs px-2 py-1 rounded font-bold">COMPLETED</span>
+                                        ) : delivery.items.length === 0 ? (
+                                            <span className="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded font-bold">ASSIGNED - PENDING</span>
+                                        ) : (
+                                            <span className="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded font-bold">{delivery.paymentStatus || "UNCOMPLETED"}</span>
+                                        )}
                                     </div>
-                                ))}
-                                <div className="border-t mt-1 pt-1 font-bold text-right">
-                                    Total: Rs. {Number(delivery.totalAmount || 0).toFixed(2)}
+                                    <p className="text-sm text-gray-600">{delivery.supplyDate} | Driver: {delivery.driverName} | Vehicle: {delivery.vehicleNo}</p>
+                                    {delivery.items.length > 0 && (
+                                        <p className="text-xs font-semibold text-gray-700">
+                                          Paid: <span className="text-green-600">Rs. {Number(delivery.paidAmount || 0).toFixed(2)}</span> | 
+                                          Outstanding: <span className="text-red-500">Rs. {Number(delivery.outstandingAmount || 0).toFixed(2)}</span>
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    {delivery.items.length > 0 && (
+                                        <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); printBill(delivery); }}><Printer className="h-4 w-4" /></Button>
+                                    )}
+                                    
+                                    {delivery.items.length > 0 && delivery.paymentStatus !== 'COMPLETED' && (
+                                        <Button size="sm" variant="outline" onClick={(e) => { 
+                                          e.stopPropagation(); 
+                                          setPaymentDeliveryId(delivery.supplyId); 
+                                          setPaymentAmount(""); 
+                                          setPaymentModalOpen(true); 
+                                        }}>
+                                          <Wallet className="h-4 w-4 text-green-600" />
+                                        </Button>
+                                    )}
+                                    
+                                    <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleEdit(delivery); }}>
+                                        {delivery.items.length === 0 ? "Fulfill" : <Edit2 className="h-4 w-4" />}
+                                    </Button>
+                                    
+                                    {isAdmin && (
+                                        <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); handleDelete(delivery.supplyId!); }}><Trash2 className="h-4 w-4" /></Button>
+                                    )}
                                 </div>
                             </div>
+
+                            {isExpanded && delivery.items.length > 0 && (
+                              <div className="p-4 border-t bg-white">
+                                <div className="text-sm bg-gray-50/50 p-3 rounded border">
+                                    {delivery.items.map((item, i) => (
+                                        <div key={i} className="flex justify-between py-1 border-b last:border-0 border-gray-100">
+                                            <span>{item.productName} (Sent: {item.quantity}, Ret: {item.returnQuantity || 0}, Exp: {item.expiredQuantity || 0})</span>
+                                            <span className="font-medium text-gray-700">Rs. {((item.quantity - (item.returnQuantity || 0) - (item.expiredQuantity || 0)) * (item.price || 0)).toFixed(2)}</span>
+                                        </div>
+                                    ))}
+                                    <div className="border-t mt-2 pt-2 font-bold text-right text-gray-900">
+                                        Total: Rs. {Number(delivery.totalAmount || 0).toFixed(2)}
+                                    </div>
+                                </div>
+                              </div>
                             )}
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            {delivery.items.length > 0 && (
-                                <Button size="sm" variant="secondary" onClick={() => printBill(delivery)}><Printer className="h-4 w-4" /></Button>
-                            )}
-                            
-                            <Button size="sm" variant="outline" onClick={() => handleEdit(delivery)}>
-                                {delivery.items.length === 0 ? "Fulfill" : <Edit2 className="h-4 w-4" />}
-                            </Button>
-                            
-                            {isAdmin && (
-                                <Button size="sm" variant="destructive" onClick={() => handleDelete(delivery.supplyId)}><Trash2 className="h-4 w-4" /></Button>
-                            )}
-                        </div>
-                    </div>
-                </Card>
-            ))
-          ) : (
-            <div className="text-center py-8 text-muted-foreground bg-white/50 rounded-xl border border-dashed">
-              No deliveries found matching your filter.
-            </div>
-          )}
+                        </Card>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground bg-white/50 rounded-xl border border-dashed">
+                    No deliveries found matching your filter.
+                  </div>
+                )}
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-6">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </main>
+      
+      {/* Payment Modal */}
+      <Dialog open={paymentModalOpen} onOpenChange={setPaymentModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Payment Installment</DialogTitle>
+            <DialogDescription>
+              Enter the payment amount for Delivery #{paymentDeliveryId}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Payment Amount (Rs.)</Label>
+              <Input 
+                type="number" 
+                placeholder="0.00" 
+                value={paymentAmount} 
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                disabled={isSubmittingPayment}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPaymentModalOpen(false)} disabled={isSubmittingPayment}>Cancel</Button>
+            <Button onClick={handlePaymentSubmit} disabled={isSubmittingPayment}>Save Payment</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

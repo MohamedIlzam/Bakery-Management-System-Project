@@ -26,4 +26,7 @@ public class ShopSupplyDTO {
     private String driverName; // Driver's name
     private String vehicleNo;
     private BigDecimal totalAmount;
+    private BigDecimal paidAmount;
+    private BigDecimal outstandingAmount;
+    private String paymentStatus;
 }

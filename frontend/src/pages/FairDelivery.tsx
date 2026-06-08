@@ -45,6 +45,17 @@ const FairDelivery = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [filterFairName, setFilterFairName] = useState<string>("all");
   const [editingDeliveryId, setEditingDeliveryId] = useState<string | null>(null);
+
+  // Pagination and Accordion State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+
+  // Filter effect to reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setExpandedRow(null);
+  }, [filterFairName]);
   
   // Available options
   const [availableProducts, setAvailableProducts] = useState<ProductDTO[]>([]);
@@ -80,7 +91,10 @@ const FairDelivery = () => {
   const loadDeliveries = async () => {
     try {
       const data = await fairDeliveryService.list();
-      setDeliveries(data);
+      setDeliveries(data.sort((a, b) => {
+        const dateDiff = new Date(b.deliveryDate || '').getTime() - new Date(a.deliveryDate || '').getTime();
+        return dateDiff !== 0 ? dateDiff : (b.deliveryId || '').localeCompare(a.deliveryId || '');
+      }));
     } catch (error: any) {
       console.error("Failed to load deliveries:", error);
     }
@@ -612,94 +626,138 @@ const FairDelivery = () => {
             </div>
           </div>
           
-          {deliveries.filter(d => filterFairName === "all" || d.fairName === filterFairName).length > 0 ? (
-            deliveries.filter(d => filterFairName === "all" || d.fairName === filterFairName).map((delivery) => (
-              <Card key={delivery.deliveryId} className="overflow-hidden">
-                <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-4">
-                        <h3 className="font-semibold text-lg">{delivery.fairName}</h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          delivery.status === "OUT" 
-                            ? "bg-amber-100 text-amber-700" 
-                            : "bg-green-100 text-green-700"
-                        }`}>
-                          {delivery.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">Date: {delivery.deliveryDate}</p>
-                      <p className="text-sm text-muted-foreground">ID: {delivery.deliveryId}</p>
-                      
-                      {delivery.items && delivery.items.length > 0 && (
-                        <div className="mt-2 text-sm bg-white p-2 rounded border">
-                            {delivery.items.map((item, idx) => {
-                                const productName = availableProducts.find(p => p.proId === item.productId)?.name || item.productId;
-                                return (
-                                <div key={idx} className="flex justify-between">
-                                  <span>{productName} (Sent: {item.qtySent}, Ret: {item.qtyRemaining || 0}, Exp: {item.qtyExpired || 0})</span>
-                                  <span>Rs. {Number((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)).toFixed(2)}</span>
-                                </div>
-                                );
-                            })}
-                            <div className="border-t mt-1 pt-1 font-bold text-right">
-                              Total Sales: Rs. {delivery.items.reduce((sum, item) => sum + ((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)), 0).toFixed(2)}
+          {(() => {
+            const filteredDeliveries = deliveries.filter(d => filterFairName === "all" || d.fairName === filterFairName);
+            const totalPages = Math.ceil(filteredDeliveries.length / itemsPerPage);
+            const paginatedDeliveries = filteredDeliveries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+            return (
+              <>
+                {paginatedDeliveries.length > 0 ? (
+                  paginatedDeliveries.map((delivery) => {
+                    const isExpanded = expandedRow === delivery.deliveryId;
+                    return (
+                    <Card key={delivery.deliveryId} className="overflow-hidden border border-border shadow-sm">
+                      <div 
+                        className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 cursor-pointer hover:bg-black/5 transition-colors"
+                        onClick={() => setExpandedRow(isExpanded ? null : delivery.deliveryId)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-4">
+                              <h3 className="font-semibold text-lg">{delivery.fairName}</h3>
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                delivery.status === "OUT" 
+                                  ? "bg-amber-100 text-amber-700" 
+                                  : "bg-green-100 text-green-700"
+                              }`}>
+                                {delivery.status}
+                              </span>
                             </div>
+                            <p className="text-sm text-muted-foreground">Date: {delivery.deliveryDate} | ID: {delivery.deliveryId}</p>
+                          </div>
+                          
+                          {/* Action Buttons */}
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => { e.stopPropagation(); handleEdit(delivery); }}
+                              disabled={isLoading}
+                              className="flex items-center gap-2"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={(e) => { e.stopPropagation(); handleDelete(delivery.deliveryId!); }}
+                              disabled={isLoading}
+                              className="flex items-center gap-2"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="p-4 border-t bg-white">
+                          {delivery.items && delivery.items.length > 0 && (
+                            <div className="text-sm bg-gray-50/50 p-3 rounded border">
+                                {delivery.items.map((item, idx) => {
+                                    const productName = availableProducts.find(p => p.proId === item.productId)?.name || item.productId;
+                                    return (
+                                    <div key={idx} className="flex justify-between py-1 border-b last:border-0 border-gray-100">
+                                      <span>{productName} (Sent: {item.qtySent}, Ret: {item.qtyRemaining || 0}, Exp: {item.qtyExpired || 0})</span>
+                                      <span className="font-medium text-gray-700">Rs. {Number((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)).toFixed(2)}</span>
+                                    </div>
+                                    );
+                                })}
+                                <div className="border-t mt-2 pt-2 font-bold text-right text-gray-900">
+                                  Total Sales: Rs. {delivery.items.reduce((sum, item) => sum + ((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)), 0).toFixed(2)}
+                                </div>
+                            </div>
+                          )}
+
+                          <div className="mt-4 grid grid-cols-2 gap-4 text-sm bg-gray-50/50 p-3 rounded border">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Tax:</span>
+                              <span className="font-medium">Rs. {delivery.tax}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Extra Payments:</span>
+                              <span className="font-medium">Rs. {delivery.extraPayments}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Diesel Amount:</span>
+                              <span className="font-medium">Rs. {delivery.dieselAmount}</span>
+                            </div>
+                            {delivery.profit !== undefined && (
+                              <div className="flex justify-between border-t border-gray-200 pt-1 mt-1">
+                                <span className="font-semibold">Profit:</span>
+                                <span className={`font-bold ${delivery.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  Rs. {Number(delivery.profit).toFixed(2)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
-
-                      <div className="mt-3 pt-3 border-t space-y-1">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <p className="text-muted-foreground">Tax:</p>
-                          <p className="font-medium">Rs. {delivery.tax}</p>
-                          <p className="text-muted-foreground">Extra Payments:</p>
-                          <p className="font-medium">Rs. {delivery.extraPayments}</p>
-                          <p className="text-muted-foreground">Diesel Amount:</p>
-                          <p className="font-medium">Rs. {delivery.dieselAmount}</p>
-                          {delivery.profit !== undefined && (
-                            <>
-                              <p className="text-muted-foreground font-semibold">Profit:</p>
-                              <p className={`font-bold ${delivery.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                Rs. {Number(delivery.profit).toFixed(2)}
-                              </p>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Action Buttons */}
-                    <div className="flex flex-col gap-2 ml-4">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(delivery)}
-                        disabled={isLoading}
-                        className="flex items-center gap-2"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(delivery.deliveryId!)}
-                        disabled={isLoading}
-                        className="flex items-center gap-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </Button>
-                    </div>
+                    </Card>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground bg-white/50 rounded-xl border border-dashed">
+                    No deliveries found matching your filter.
                   </div>
-                </div>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-8 text-muted-foreground bg-white/50 rounded-xl border border-dashed">
-              No deliveries found matching your filter.
-            </div>
-          )}
+                )}
+                
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-6">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground font-medium">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </main>
     </div>

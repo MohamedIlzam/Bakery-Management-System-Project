@@ -37,4 +37,9 @@ public class ShopSupplyController {
         shopSupplyService.deleteShopSupply(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}/payment")
+    public ResponseEntity<ShopSupplyDTO> addPayment(@PathVariable String id, @RequestBody java.math.BigDecimal amount) {
+        return ResponseEntity.ok(shopSupplyService.addPayment(id, amount));
+    }
 }
