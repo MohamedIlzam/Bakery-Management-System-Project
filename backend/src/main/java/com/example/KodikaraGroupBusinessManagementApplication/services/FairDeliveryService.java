@@ -61,6 +61,7 @@ public class FairDeliveryService {
                 item.setQtySent(itemDto.getQtySent());
                 item.setUnitPrice(itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : product.getUnitPrice());
                 item.setQtyRemaining(itemDto.getQtyRemaining()); // Uses 0 by default, or the user provided quantity
+                item.setQtyExpired(itemDto.getQtyExpired());
                 items.add(item);
             }
         }
@@ -88,12 +89,11 @@ public class FairDeliveryService {
                     .orElseThrow(() -> new ResourceNotFoundException("Item ID " + returnedItemDto.getItemId() + " not found in this delivery."));
 
             // Validate remaining quantity
-            if(returnedItemDto.getQtyRemaining() < 0 || returnedItemDto.getQtyRemaining() > itemToUpdate.getQtySent()){
-                throw new IllegalArgumentException("Invalid quantity remaining (" + returnedItemDto.getQtyRemaining()
-                        + ") for item: " + itemToUpdate.getProduct().getName()
-                        + ". Must be between 0 and " + itemToUpdate.getQtySent());
+            if(returnedItemDto.getQtyRemaining() < 0 || returnedItemDto.getQtyExpired() < 0 || (returnedItemDto.getQtyRemaining() + returnedItemDto.getQtyExpired()) > itemToUpdate.getQtySent()){
+                throw new IllegalArgumentException("Invalid quantities for item: " + itemToUpdate.getProduct().getName());
             }
             itemToUpdate.setQtyRemaining(returnedItemDto.getQtyRemaining());
+            itemToUpdate.setQtyExpired(returnedItemDto.getQtyExpired());
             // Changes tracked by Hibernate
         }
 
@@ -135,7 +135,7 @@ public class FairDeliveryService {
 
         BigDecimal totalIncome = items.stream()
                 .map(item -> safe(item.getUnitPrice())
-                        .multiply(BigDecimal.valueOf(item.getQtySent() - item.getQtyRemaining())))
+                        .multiply(BigDecimal.valueOf(item.getQtySent() - item.getQtyRemaining() - item.getQtyExpired())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalExpenses = safe(fairDelivery.getExtraPayments())
@@ -198,6 +198,7 @@ public class FairDeliveryService {
                     FairDeliveryItem existingItem = existingItemOpt.get();
                     existingItem.setQtySent(itemDto.getQtySent());
                     existingItem.setQtyRemaining(itemDto.getQtyRemaining());
+                    existingItem.setQtyExpired(itemDto.getQtyExpired());
                     existingItem.setUnitPrice(itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : existingItem.getProduct().getUnitPrice());
                 } else {
                     Product product = productRepository.findById(itemDto.getProductId())
@@ -209,6 +210,7 @@ public class FairDeliveryService {
                     newItem.setQtySent(itemDto.getQtySent());
                     newItem.setUnitPrice(itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : product.getUnitPrice());
                     newItem.setQtyRemaining(itemDto.getQtyRemaining());
+                    newItem.setQtyExpired(itemDto.getQtyExpired());
                     delivery.getItems().add(newItem);
                 }
             }
@@ -256,6 +258,7 @@ public class FairDeliveryService {
         if (entity.getProduct() != null) dto.setProductId(entity.getProduct().getProId());
         dto.setQtySent(entity.getQtySent());
         dto.setQtyRemaining(entity.getQtyRemaining());
+        dto.setQtyExpired(entity.getQtyExpired());
         dto.setUnitPrice(safe(entity.getUnitPrice()));
         return dto;
     }

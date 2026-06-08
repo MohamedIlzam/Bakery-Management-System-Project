@@ -146,6 +146,7 @@ public class ShopSupplyService {
 
         item.setQtySupplied(itemDTO.getQuantity());
         item.setQtyReturned(itemDTO.getReturnQuantity());
+        item.setQtyExpired(itemDTO.getExpiredQuantity());
         item.setUnitPrice(itemDTO.getPrice() != null ? itemDTO.getPrice() : product.getUnitPrice());
         return item;
     }
@@ -177,8 +178,10 @@ public class ShopSupplyService {
                 ShopSupplyItemDTO itemDto = new ShopSupplyItemDTO();
                 if (item.getShop() != null) {
                     itemDto.setShopId(item.getShop().getShopId());
-                    if (dto.getShopName() == null)
+                    if (dto.getShopName() == null) {
                         dto.setShopName(item.getShop().getShopName());
+                        dto.setShopId(item.getShop().getShopId());
+                    }
                 }
                 if (item.getProduct() != null) {
                     itemDto.setProductId(item.getProduct().getProId());
@@ -186,11 +189,12 @@ public class ShopSupplyService {
                 }
                 itemDto.setQuantity(item.getQtySupplied());
                 itemDto.setReturnQuantity(item.getQtyReturned());
+                itemDto.setExpiredQuantity(item.getQtyExpired());
 
                 BigDecimal price = item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO;
                 itemDto.setPrice(price);
 
-                total = total.add(price.multiply(BigDecimal.valueOf(item.getQtySupplied() - item.getQtyReturned())));
+                total = total.add(price.multiply(BigDecimal.valueOf(item.getQtySupplied() - item.getQtyReturned() - item.getQtyExpired())));
                 itemDTOs.add(itemDto);
             }
         }

@@ -29,6 +29,9 @@ public class FairDeliveryItem {
     @Column(name = "qty_remaining")
     private int qtyRemaining;
 
+    @Column(name = "qty_expired")
+    private int qtyExpired;
+
     @Column(name = "unit_price", precision = 10, scale = 2, nullable = false)
     private BigDecimal unitPrice = BigDecimal.ZERO;
 }

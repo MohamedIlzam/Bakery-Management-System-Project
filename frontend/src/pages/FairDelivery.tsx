@@ -34,6 +34,7 @@ interface ProductItem {
   sentQuantity: number;
   price: number;
   returnedQuantity: number;
+  expiredQuantity: number;
 }
 
 const FairDelivery = () => {
@@ -59,7 +60,7 @@ const FairDelivery = () => {
   const [extraPayments, setExtraPayments] = useState(0);
   const [dieselAmount, setDieselAmount] = useState(0);
   const [products, setProducts] = useState<ProductItem[]>([
-    { id: "1", productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0 }
+    { id: "1", productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0, expiredQuantity: 0 }
   ]);
 
   // Load all data on mount
@@ -124,7 +125,7 @@ const FairDelivery = () => {
   const addProduct = () => {
     setProducts([
       ...products,
-      { id: Date.now().toString(), productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0 }
+      { id: Date.now().toString(), productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0, expiredQuantity: 0 }
     ]);
   };
 
@@ -213,6 +214,7 @@ const FairDelivery = () => {
         qtySent: p.sentQuantity,
         unitPrice: p.price,
         qtyRemaining: p.returnedQuantity,
+        qtyExpired: p.expiredQuantity,
       }));
 
       const deliveryData: FairDeliveryDTO = {
@@ -283,6 +285,7 @@ const FairDelivery = () => {
         sentQuantity: item.qtySent,
         price: item.unitPrice || 0,
         returnedQuantity: item.qtyRemaining || 0,
+        expiredQuantity: item.qtyExpired || 0,
       }));
       setProducts(loadedProducts);
     }
@@ -333,7 +336,7 @@ const FairDelivery = () => {
     setTax(0);
     setExtraPayments(0);
     setDieselAmount(0);
-    setProducts([{ id: "1", productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0 }]);
+    setProducts([{ id: "1", productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0, expiredQuantity: 0 }]);
   };
 
   return (
@@ -439,6 +442,7 @@ const FairDelivery = () => {
                         <TableHead>Product</TableHead>
                         <TableHead>Sent Qty</TableHead>
                         <TableHead>Returned Qty</TableHead>
+                        <TableHead>Expired Qty</TableHead>
                         <TableHead>Price (Rs.)</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
@@ -485,6 +489,17 @@ const FairDelivery = () => {
                               min="0"
                               value={product.returnedQuantity}
                               onChange={(e) => updateProduct(product.id, "returnedQuantity", Math.max(0, Number(e.target.value)))}
+                              placeholder="0"
+                              className="h-9"
+                              disabled={isLoading}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={product.expiredQuantity}
+                              onChange={(e) => updateProduct(product.id, "expiredQuantity", Math.max(0, Number(e.target.value)))}
                               placeholder="0"
                               className="h-9"
                               disabled={isLoading}
@@ -622,13 +637,13 @@ const FairDelivery = () => {
                                 const productName = availableProducts.find(p => p.proId === item.productId)?.name || item.productId;
                                 return (
                                 <div key={idx} className="flex justify-between">
-                                  <span>{productName} (Sent: {item.qtySent}, Ret: {item.qtyRemaining || 0})</span>
-                                  <span>Rs. {Number((item.qtySent - (item.qtyRemaining || 0)) * (item.unitPrice || 0)).toFixed(2)}</span>
+                                  <span>{productName} (Sent: {item.qtySent}, Ret: {item.qtyRemaining || 0}, Exp: {item.qtyExpired || 0})</span>
+                                  <span>Rs. {Number((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)).toFixed(2)}</span>
                                 </div>
                                 );
                             })}
                             <div className="border-t mt-1 pt-1 font-bold text-right">
-                              Total Sales: Rs. {delivery.items.reduce((sum, item) => sum + ((item.qtySent - (item.qtyRemaining || 0)) * (item.unitPrice || 0)), 0).toFixed(2)}
+                              Total Sales: Rs. {delivery.items.reduce((sum, item) => sum + ((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)), 0).toFixed(2)}
                             </div>
                         </div>
                       )}

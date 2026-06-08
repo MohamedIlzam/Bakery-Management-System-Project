@@ -5,6 +5,7 @@ export interface ShopSupplyItemDTO {
   productName: string;
   quantity: number;
   returnQuantity?: number;
+  expiredQuantity?: number;
   price: number;
   shopId?: string;
 }

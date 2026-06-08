@@ -33,6 +33,8 @@ public class ShopSupplyItem {
     private int qtySupplied;
     @Column(name = "qty_returned", nullable = false)
     private int qtyReturned = 0;
+    @Column(name = "qty_expired", nullable = false)
+    private int qtyExpired = 0;
     @Column(name = "unit_price", precision = 10, scale = 2, nullable = false)
     private BigDecimal unitPrice = BigDecimal.ZERO;
 }

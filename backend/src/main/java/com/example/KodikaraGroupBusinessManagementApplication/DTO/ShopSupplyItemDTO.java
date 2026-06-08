@@ -16,4 +16,5 @@ public class ShopSupplyItemDTO {
     private BigDecimal price;
     private int quantity;
     private int returnQuantity;
+    private int expiredQuantity;
 }

@@ -322,6 +322,7 @@ interface ProductItem {
   productName: string;
   quantity: number;
   returnQuantity: number;
+  expiredQuantity: number;
   price: number;
 }
 
@@ -340,7 +341,7 @@ const ShopDelivery = () => {
   const [shopId, setShopId] = useState("");
   const [driverId, setDriverId] = useState(""); 
   const [products, setProducts] = useState<ProductItem[]>([
-    { id: "1", productId: "", productName: "", quantity: 0, returnQuantity: 0, price: 0 }
+    { id: "1", productId: "", productName: "", quantity: 0, returnQuantity: 0, expiredQuantity: 0, price: 0 }
   ]);
   
   const [availableProducts, setAvailableProducts] = useState<ProductDTO[]>([]);
@@ -376,7 +377,7 @@ const ShopDelivery = () => {
   const loadDeliveries = async () => { try { setSavedDeliveries(await shopSupplyService.list()); } catch (e) {} };
 
   const addProduct = () => {
-    setProducts([...products, { id: Date.now().toString(), productId: "", productName: "", quantity: 0, returnQuantity: 0, price: 0 }]);
+    setProducts([...products, { id: Date.now().toString(), productId: "", productName: "", quantity: 0, returnQuantity: 0, expiredQuantity: 0, price: 0 }]);
   };
 
   const updateProduct = (id: string, field: keyof ProductItem, value: any) => {
@@ -419,6 +420,7 @@ const ShopDelivery = () => {
         productName: p.productName,
         quantity: p.quantity,
         returnQuantity: p.returnQuantity,
+        expiredQuantity: p.expiredQuantity,
         price: p.price,
         shopId: shopId,
       }));
@@ -462,10 +464,11 @@ const ShopDelivery = () => {
         productName: item.productName || "",
         quantity: item.quantity,
         returnQuantity: item.returnQuantity || 0,
+        expiredQuantity: item.expiredQuantity || 0,
         price: item.price || 0,
       })));
     } else {
-      setProducts([{ id: "1", productId: "", productName: "", quantity: 0, returnQuantity: 0, price: 0 }]);
+      setProducts([{ id: "1", productId: "", productName: "", quantity: 0, returnQuantity: 0, expiredQuantity: 0, price: 0 }]);
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -489,7 +492,7 @@ const ShopDelivery = () => {
     setShopId("");
     setDriverId("");
     setVehicleId("");
-    setProducts([{ id: "1", productId: "", productName: "", quantity: 0, returnQuantity: 0, price: 0 }]);
+    setProducts([{ id: "1", productId: "", productName: "", quantity: 0, returnQuantity: 0, expiredQuantity: 0, price: 0 }]);
   };
 
   const visibleDeliveries = savedDeliveries.filter(delivery => {
@@ -566,6 +569,7 @@ const ShopDelivery = () => {
                         <th className="px-4 py-3 font-medium">Product</th>
                         <th className="px-4 py-3 font-medium">Sent Qty</th>
                         <th className="px-4 py-3 font-medium">Return Qty</th>
+                        <th className="px-4 py-3 font-medium">Expired Qty</th>
                         <th className="px-4 py-3 font-medium">Price (Rs.)</th>
                         <th className="px-4 py-3 w-[50px]"></th>
                       </tr>
@@ -584,6 +588,9 @@ const ShopDelivery = () => {
                           </td>
                           <td className="p-3">
                             <Input type="number" min="0" value={product.returnQuantity} onChange={(e) => updateProduct(product.id, "returnQuantity", Math.max(0, Number(e.target.value)))} placeholder="0" className="h-9" />
+                          </td>
+                          <td className="p-3">
+                            <Input type="number" min="0" value={product.expiredQuantity} onChange={(e) => updateProduct(product.id, "expiredQuantity", Math.max(0, Number(e.target.value)))} placeholder="0" className="h-9" />
                           </td>
                           <td className="p-3">
                             <Input type="number" min="0" step="0.01" value={product.price} onChange={(e) => updateProduct(product.id, "price", Math.max(0, Number(e.target.value)))} placeholder="0.00" className="h-9"/>
@@ -650,8 +657,8 @@ const ShopDelivery = () => {
                             <div className="mt-2 text-sm bg-white p-2 rounded border">
                                 {delivery.items.map((item, i) => (
                                     <div key={i} className="flex justify-between">
-                                        <span>{item.productName} (Sent: {item.quantity}, Ret: {item.returnQuantity || 0})</span>
-                                        <span>Rs. {((item.quantity - (item.returnQuantity || 0)) * (item.price || 0)).toFixed(2)}</span>
+                                        <span>{item.productName} (Sent: {item.quantity}, Ret: {item.returnQuantity || 0}, Exp: {item.expiredQuantity || 0})</span>
+                                        <span>Rs. {((item.quantity - (item.returnQuantity || 0) - (item.expiredQuantity || 0)) * (item.price || 0)).toFixed(2)}</span>
                                     </div>
                                 ))}
                                 <div className="border-t mt-1 pt-1 font-bold text-right">
