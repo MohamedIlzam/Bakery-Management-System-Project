@@ -17,6 +17,15 @@ import {
 } from "@/components/ui/table";
 import { fairDeliveryReportService, FairDeliveryReportDTO } from "@/services/fair-delivery-report.service";
 import { shopSupplyReportService, ShopSupplyReportDTO } from "@/services/shop-supply-report.service";
+import { fairDeliveryService, FairDeliveryDTO } from "@/services/fair-delivery.service";
+import { shopSupplyService, ShopSupplyResponseDTO } from "@/services/shop-supply.service";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -31,11 +40,20 @@ const Reports = () => {
   const [fairMonthlyDate, setFairMonthlyDate] = useState("");
   const [isLoadingFair, setIsLoadingFair] = useState(false);
 
+  const [selectedFairReport, setSelectedFairReport] = useState<FairDeliveryReportDTO | null>(null);
+  const [fairDeliveriesDetail, setFairDeliveriesDetail] = useState<FairDeliveryDTO[]>([]);
+  const [isFairModalOpen, setIsFairModalOpen] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
   // Shop Supply Reports
   const [shopReports, setShopReports] = useState<any[]>([]);
   const [shopDailyDate, setShopDailyDate] = useState("");
   const [shopMonthlyDate, setShopMonthlyDate] = useState("");
   const [isLoadingShop, setIsLoadingShop] = useState(false);
+
+  const [selectedShopReport, setSelectedShopReport] = useState<ShopSupplyReportDTO | null>(null);
+  const [shopDeliveriesDetail, setShopDeliveriesDetail] = useState<ShopSupplyResponseDTO[]>([]);
+  const [isShopModalOpen, setIsShopModalOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !['ROLE_OWNER', 'ADMIN'].includes(userRole || '')) {
@@ -192,6 +210,52 @@ const Reports = () => {
     }
   };
 
+  const handleFairReportClick = async (report: FairDeliveryReportDTO) => {
+    setSelectedFairReport(report);
+    setIsFairModalOpen(true);
+    setIsLoadingDetails(true);
+    try {
+      const dateOrMonth = report.reportType === 'DAILY' ? report.freportDate : report.reportMonth;
+      const allDeliveries = await fairDeliveryService.list();
+      let details: FairDeliveryDTO[] = [];
+      
+      if (report.reportType === 'DAILY' && dateOrMonth) {
+        details = allDeliveries.filter(d => d.deliveryDate === dateOrMonth);
+      } else if (report.reportType === 'MONTHLY' && dateOrMonth) {
+        details = allDeliveries.filter(d => d.deliveryDate?.startsWith(dateOrMonth));
+      }
+      
+      setFairDeliveriesDetail(details);
+    } catch (e) {
+      toast({ title: "Error loading details", variant: "destructive" });
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+
+  const handleShopReportClick = async (report: ShopSupplyReportDTO) => {
+    setSelectedShopReport(report);
+    setIsShopModalOpen(true);
+    setIsLoadingDetails(true);
+    try {
+      const dateOrMonth = report.reportType === 'DAILY' ? report.sreportDate : report.reportMonth;
+      const allDeliveries = await shopSupplyService.list();
+      let details: ShopSupplyResponseDTO[] = [];
+      
+      if (report.reportType === 'DAILY' && dateOrMonth) {
+        details = allDeliveries.filter(d => d.supplyDate === dateOrMonth);
+      } else if (report.reportType === 'MONTHLY' && dateOrMonth) {
+        details = allDeliveries.filter(d => d.supplyDate?.startsWith(dateOrMonth));
+      }
+      
+      setShopDeliveriesDetail(details);
+    } catch (e) {
+      toast({ title: "Error loading details", variant: "destructive" });
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-bakery-cream to-bakery-warm">
       <header className="bg-white/80 backdrop-blur-sm border-b border-border shadow-[var(--shadow-soft)]">
@@ -289,7 +353,11 @@ const Reports = () => {
                       </TableHeader>
                       <TableBody>
                         {fairReports.map((report, index) => (
-                          <TableRow key={report.freportID || `fair-report-${index}`}>
+                          <TableRow 
+                            key={report.freportID || `fair-report-${index}`}
+                            onClick={() => handleFairReportClick(report)}
+                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          >
                             <TableCell className="font-mono text-xs">
                               {report.freportID}
                             </TableCell>
@@ -320,7 +388,7 @@ const Reports = () => {
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                onClick={() => handleDeleteFairReport(report.freportID)} 
+                                onClick={(e) => { e.stopPropagation(); handleDeleteFairReport(report.freportID); }} 
                                 disabled={isLoadingFair}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -412,7 +480,11 @@ const Reports = () => {
                       </TableHeader>
                       <TableBody>
                         {shopReports.map((report, index) => (
-                          <TableRow key={report.sreportId || `shop-report-${index}`}>
+                          <TableRow 
+                            key={report.sreportId || `shop-report-${index}`}
+                            onClick={() => handleShopReportClick(report)}
+                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          >
                             <TableCell className="font-mono text-xs">
                               {report.sreportId}
                             </TableCell>
@@ -438,7 +510,7 @@ const Reports = () => {
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                onClick={() => handleDeleteShopReport(report.sreportId)} 
+                                onClick={(e) => { e.stopPropagation(); handleDeleteShopReport(report.sreportId); }} 
                                 disabled={isLoadingShop}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -454,6 +526,145 @@ const Reports = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Fair Delivery Detail Modal */}
+        <Dialog open={isFairModalOpen} onOpenChange={setIsFairModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Report Details: {selectedFairReport?.freportID}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedFairReport?.reportType === 'DAILY' ? 'Daily' : 'Monthly'} Report for {selectedFairReport?.reportType === 'DAILY' ? selectedFairReport.freportDate : selectedFairReport?.reportMonth}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 border-b pb-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+                  <p className="text-lg font-semibold text-green-600">Rs. {Number(selectedFairReport?.totalRevenue || 0).toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Profit</p>
+                  <p className="text-lg font-semibold text-blue-600">Rs. {Number(selectedFairReport?.totalProfit || 0).toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Expenses</p>
+                  <p className="text-lg font-semibold text-red-600">Rs. {Number(selectedFairReport?.totalExpences || selectedFairReport?.totalExpenses || 0).toFixed(2)}</p>
+                </div>
+              </div>
+              
+              <h3 className="font-medium">Included Deliveries ({fairDeliveriesDetail.length})</h3>
+              {isLoadingDetails ? (
+                <div className="text-center py-4 text-muted-foreground">Loading deliveries...</div>
+              ) : fairDeliveriesDetail.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">No deliveries found for this report.</div>
+              ) : (
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Delivery ID</TableHead>
+                        <TableHead>Fair Name</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Revenue</TableHead>
+                        <TableHead>Expenses</TableHead>
+                        <TableHead>Profit</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fairDeliveriesDetail.map((d, i) => {
+                        const revenue = d.items?.reduce((sum, item) => sum + ((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)), 0) || 0;
+                        const expenses = (d.tax || 0) + (d.extraPayments || 0) + (d.dieselAmount || 0);
+                        return (
+                          <TableRow key={d.deliveryId || i}>
+                            <TableCell className="font-mono text-xs">{d.deliveryId}</TableCell>
+                            <TableCell>{d.fairName}</TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 rounded text-[10px] font-bold ${d.status === 'OUT' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                                {d.status}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-green-600">Rs. {revenue.toFixed(2)}</TableCell>
+                            <TableCell className="text-red-600">Rs. {expenses.toFixed(2)}</TableCell>
+                            <TableCell className="text-blue-600 font-medium">Rs. {Number(d.profit || 0).toFixed(2)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Shop Supply Detail Modal */}
+        <Dialog open={isShopModalOpen} onOpenChange={setIsShopModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Report Details: {selectedShopReport?.sreportId}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedShopReport?.reportType === 'DAILY' ? 'Daily' : 'Monthly'} Report for {selectedShopReport?.reportType === 'DAILY' ? selectedShopReport.sreportDate : selectedShopReport?.reportMonth}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 border-b pb-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Supplies</p>
+                  <p className="text-lg font-semibold">{selectedShopReport?.totalSupplies || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+                  <p className="text-lg font-semibold text-green-600">Rs. {Number(selectedShopReport?.totalAmount || 0).toFixed(2)}</p>
+                </div>
+              </div>
+              
+              <h3 className="font-medium">Included Supplies ({shopDeliveriesDetail.length})</h3>
+              {isLoadingDetails ? (
+                <div className="text-center py-4 text-muted-foreground">Loading supplies...</div>
+              ) : shopDeliveriesDetail.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">No supplies found for this report.</div>
+              ) : (
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Supply ID</TableHead>
+                        <TableHead>Shop Name</TableHead>
+                        <TableHead>Driver</TableHead>
+                        <TableHead>Vehicle</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Total Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {shopDeliveriesDetail.map((d, i) => (
+                        <TableRow key={d.supplyId || i}>
+                          <TableCell className="font-mono text-xs">{d.supplyId}</TableCell>
+                          <TableCell>{d.shopName}</TableCell>
+                          <TableCell>{d.driverName}</TableCell>
+                          <TableCell>{d.vehicleNo}</TableCell>
+                          <TableCell>
+                            {d.items && d.items.length === 0 ? (
+                                <span className="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded font-bold">ASSIGNED</span>
+                            ) : (
+                                <span className="bg-green-200 text-green-800 text-xs px-2 py-1 rounded font-bold">COMPLETED</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-green-600 font-medium">Rs. {Number(d.totalAmount || 0).toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
       </main>
     </div>
   );
