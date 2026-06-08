@@ -36,4 +36,13 @@ public class ShopSupply {
     @EqualsAndHashCode.Exclude
     protected List<ShopSupplyItem> items;
 
+    @Column(name = "paid_amount", precision = 10, scale = 2)
+    private java.math.BigDecimal paidAmount = java.math.BigDecimal.ZERO;
+
+    @Column(name = "outstanding_amount", precision = 10, scale = 2)
+    private java.math.BigDecimal outstandingAmount = java.math.BigDecimal.ZERO;
+
+    @Column(name = "payment_status", length = 20)
+    private String paymentStatus = "UNCOMPLETED";
+
 }

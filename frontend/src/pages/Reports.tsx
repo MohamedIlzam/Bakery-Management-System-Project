@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,7 @@ const Reports = () => {
   const [fairDeliveriesDetail, setFairDeliveriesDetail] = useState<FairDeliveryDTO[]>([]);
   const [isFairModalOpen, setIsFairModalOpen] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [expandedFairDelivery, setExpandedFairDelivery] = useState<string | null>(null);
 
   // Shop Supply Reports
   const [shopReports, setShopReports] = useState<any[]>([]);
@@ -54,6 +55,7 @@ const Reports = () => {
   const [selectedShopReport, setSelectedShopReport] = useState<ShopSupplyReportDTO | null>(null);
   const [shopDeliveriesDetail, setShopDeliveriesDetail] = useState<ShopSupplyResponseDTO[]>([]);
   const [isShopModalOpen, setIsShopModalOpen] = useState(false);
+  const [expandedShopDelivery, setExpandedShopDelivery] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !['ROLE_OWNER', 'ADMIN'].includes(userRole || '')) {
@@ -212,6 +214,7 @@ const Reports = () => {
 
   const handleFairReportClick = async (report: FairDeliveryReportDTO) => {
     setSelectedFairReport(report);
+    setExpandedFairDelivery(null);
     setIsFairModalOpen(true);
     setIsLoadingDetails(true);
     try {
@@ -235,6 +238,7 @@ const Reports = () => {
 
   const handleShopReportClick = async (report: ShopSupplyReportDTO) => {
     setSelectedShopReport(report);
+    setExpandedShopDelivery(null);
     setIsShopModalOpen(true);
     setIsLoadingDetails(true);
     try {
@@ -388,7 +392,7 @@ const Reports = () => {
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                onClick={(e) => { e.stopPropagation(); handleDeleteFairReport(report.freportID); }} 
+                                onClick={(e) => { e.stopPropagation(); handleDeleteFairReport(report.reportId); }} 
                                 disabled={isLoadingFair}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -510,7 +514,7 @@ const Reports = () => {
                               <Button 
                                 size="sm" 
                                 variant="ghost" 
-                                onClick={(e) => { e.stopPropagation(); handleDeleteShopReport(report.sreportId); }} 
+                                onClick={(e) => { e.stopPropagation(); handleDeleteShopReport(report.reportId || report.sreportId); }} 
                                 disabled={isLoadingShop}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -532,7 +536,7 @@ const Reports = () => {
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                Report Details: {selectedFairReport?.freportID}
+                Report Details: {selectedFairReport?.reportId}
               </DialogTitle>
               <DialogDescription>
                 {selectedFairReport?.reportType === 'DAILY' ? 'Daily' : 'Monthly'} Report for {selectedFairReport?.reportType === 'DAILY' ? selectedFairReport.freportDate : selectedFairReport?.reportMonth}
@@ -550,7 +554,7 @@ const Reports = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Expenses</p>
-                  <p className="text-lg font-semibold text-red-600">Rs. {Number(selectedFairReport?.totalExpences || selectedFairReport?.totalExpenses || 0).toFixed(2)}</p>
+                  <p className="text-lg font-semibold text-red-600">Rs. {Number(selectedFairReport?.totalExpences || 0).toFixed(2)}</p>
                 </div>
               </div>
               
@@ -576,19 +580,44 @@ const Reports = () => {
                       {fairDeliveriesDetail.map((d, i) => {
                         const revenue = d.items?.reduce((sum, item) => sum + ((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)), 0) || 0;
                         const expenses = (d.tax || 0) + (d.extraPayments || 0) + (d.dieselAmount || 0);
+                        const isExpanded = expandedFairDelivery === (d.deliveryId || String(i));
                         return (
-                          <TableRow key={d.deliveryId || i}>
-                            <TableCell className="font-mono text-xs">{d.deliveryId}</TableCell>
-                            <TableCell>{d.fairName}</TableCell>
-                            <TableCell>
-                              <span className={`px-2 py-1 rounded text-[10px] font-bold ${d.status === 'OUT' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                                {d.status}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-green-600">Rs. {revenue.toFixed(2)}</TableCell>
-                            <TableCell className="text-red-600">Rs. {expenses.toFixed(2)}</TableCell>
-                            <TableCell className="text-blue-600 font-medium">Rs. {Number(d.profit || 0).toFixed(2)}</TableCell>
-                          </TableRow>
+                          <React.Fragment key={d.deliveryId || i}>
+                            <TableRow 
+                                className="cursor-pointer hover:bg-gray-50"
+                                onClick={() => setExpandedFairDelivery(isExpanded ? null : (d.deliveryId || String(i)))}
+                            >
+                              <TableCell className="font-mono text-xs">{d.deliveryId}</TableCell>
+                              <TableCell>{d.fairName}</TableCell>
+                              <TableCell>
+                                <span className={`px-2 py-1 rounded text-[10px] font-bold ${d.status === 'OUT' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+                                  {d.status}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-green-600">Rs. {revenue.toFixed(2)}</TableCell>
+                              <TableCell className="text-red-600">Rs. {expenses.toFixed(2)}</TableCell>
+                              <TableCell className="text-blue-600 font-medium">Rs. {Number(d.profit || 0).toFixed(2)}</TableCell>
+                            </TableRow>
+                            {isExpanded && d.items && d.items.length > 0 && (
+                              <TableRow>
+                                <TableCell colSpan={6} className="bg-gray-50 p-4">
+                                  <div className="text-sm bg-white p-3 rounded border shadow-sm">
+                                    <h4 className="font-semibold mb-2 text-gray-700">Product Breakdown</h4>
+                                    {d.items.map((item, idx) => (
+                                      <div key={idx} className="flex justify-between py-1 border-b last:border-0 border-gray-100">
+                                        {/* Fallback to productId if name not populated in DTO */}
+                                        <span>{item.productId} (Sent: {item.qtySent}, Ret: {item.qtyRemaining || 0}, Exp: {item.qtyExpired || 0})</span>
+                                        <span className="font-medium">Rs. {Number((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)).toFixed(2)}</span>
+                                      </div>
+                                    ))}
+                                    <div className="border-t mt-2 pt-2 font-bold text-right text-gray-900">
+                                      Total Sales: Rs. {revenue.toFixed(2)}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
                         );
                       })}
                     </TableBody>
@@ -604,7 +633,7 @@ const Reports = () => {
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                Report Details: {selectedShopReport?.sreportId}
+                Report Details: {selectedShopReport?.reportId}
               </DialogTitle>
               <DialogDescription>
                 {selectedShopReport?.reportType === 'DAILY' ? 'Daily' : 'Monthly'} Report for {selectedShopReport?.reportType === 'DAILY' ? selectedShopReport.sreportDate : selectedShopReport?.reportMonth}
@@ -641,22 +670,48 @@ const Reports = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {shopDeliveriesDetail.map((d, i) => (
-                        <TableRow key={d.supplyId || i}>
-                          <TableCell className="font-mono text-xs">{d.supplyId}</TableCell>
-                          <TableCell>{d.shopName}</TableCell>
-                          <TableCell>{d.driverName}</TableCell>
-                          <TableCell>{d.vehicleNo}</TableCell>
-                          <TableCell>
-                            {d.items && d.items.length === 0 ? (
-                                <span className="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded font-bold">ASSIGNED</span>
-                            ) : (
-                                <span className="bg-green-200 text-green-800 text-xs px-2 py-1 rounded font-bold">COMPLETED</span>
+                      {shopDeliveriesDetail.map((d, i) => {
+                        const isExpanded = expandedShopDelivery === (d.supplyId || String(i));
+                        return (
+                          <React.Fragment key={d.supplyId || i}>
+                            <TableRow 
+                                className="cursor-pointer hover:bg-gray-50"
+                                onClick={() => setExpandedShopDelivery(isExpanded ? null : (d.supplyId || String(i)))}
+                            >
+                              <TableCell className="font-mono text-xs">{d.supplyId}</TableCell>
+                              <TableCell>{d.shopName}</TableCell>
+                              <TableCell>{d.driverName}</TableCell>
+                              <TableCell>{d.vehicleNo}</TableCell>
+                              <TableCell>
+                                {d.items && d.items.length === 0 ? (
+                                    <span className="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded font-bold">ASSIGNED</span>
+                                ) : (
+                                    <span className="bg-green-200 text-green-800 text-xs px-2 py-1 rounded font-bold">COMPLETED</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-green-600 font-medium">Rs. {Number(d.totalAmount || 0).toFixed(2)}</TableCell>
+                            </TableRow>
+                            {isExpanded && d.items && d.items.length > 0 && (
+                              <TableRow>
+                                <TableCell colSpan={6} className="bg-gray-50 p-4">
+                                  <div className="text-sm bg-white p-3 rounded border shadow-sm">
+                                    <h4 className="font-semibold mb-2 text-gray-700">Product Breakdown</h4>
+                                    {d.items.map((item, idx) => (
+                                      <div key={idx} className="flex justify-between py-1 border-b last:border-0 border-gray-100">
+                                        <span>{item.productName} (Sent: {item.quantity}, Ret: {item.returnQuantity || 0}, Exp: {item.expiredQuantity || 0})</span>
+                                        <span className="font-medium">Rs. {((item.quantity - (item.returnQuantity || 0) - (item.expiredQuantity || 0)) * (item.price || 0)).toFixed(2)}</span>
+                                      </div>
+                                    ))}
+                                    <div className="border-t mt-2 pt-2 font-bold text-right text-gray-900">
+                                      Total Sales: Rs. {Number(d.totalAmount || 0).toFixed(2)}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
                             )}
-                          </TableCell>
-                          <TableCell className="text-green-600 font-medium">Rs. {Number(d.totalAmount || 0).toFixed(2)}</TableCell>
-                        </TableRow>
-                      ))}
+                          </React.Fragment>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>

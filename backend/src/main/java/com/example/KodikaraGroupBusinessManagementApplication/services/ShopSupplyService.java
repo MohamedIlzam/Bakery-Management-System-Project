@@ -50,13 +50,23 @@ public class ShopSupplyService {
         }
 
         List<ShopSupplyItem> supplyItems = new ArrayList<>();
+        BigDecimal totalAmount = BigDecimal.ZERO;
         if (supplyDto.getItems() != null) {
             for (ShopSupplyItemDTO itemDTO : supplyDto.getItems()) {
-                supplyItems.add(mapItemDTOToEntity(itemDTO, shopSupply));
+                ShopSupplyItem itemEntity = mapItemDTOToEntity(itemDTO, shopSupply);
+                supplyItems.add(itemEntity);
+                BigDecimal price = itemEntity.getUnitPrice() != null ? itemEntity.getUnitPrice() : BigDecimal.ZERO;
+                totalAmount = totalAmount.add(price.multiply(BigDecimal.valueOf(itemEntity.getQtySupplied() - itemEntity.getQtyReturned() - itemEntity.getQtyExpired())));
             }
         }
 
         shopSupply.setItems(supplyItems);
+        
+        // Initial setup for payment lifecycle
+        shopSupply.setPaidAmount(BigDecimal.ZERO);
+        shopSupply.setOutstandingAmount(totalAmount);
+        shopSupply.setPaymentStatus(totalAmount.compareTo(BigDecimal.ZERO) <= 0 && supplyDto.getItems() != null && !supplyDto.getItems().isEmpty() ? "COMPLETED" : "UNCOMPLETED");
+
         ShopSupply savedSupply = shopSupplyRepository.save(shopSupply);
         return convertToDTO(savedSupply);
     }
@@ -90,27 +100,32 @@ public class ShopSupplyService {
         }
 
         if (dto.getItems() != null) {
-            // Remove items that are no longer in the DTO
-            List<String> incomingKeys = dto.getItems().stream()
-                    .map(item -> item.getProductId() + "-" + item.getShopId())
-                    .collect(Collectors.toList());
-            supply.getItems().removeIf(existingItem -> !incomingKeys.contains(existingItem.getProduct().getProId() + "-" + existingItem.getShop().getShopId()));
-
+            supply.getItems().clear();
             for (ShopSupplyItemDTO itemDto : dto.getItems()) {
-                java.util.Optional<ShopSupplyItem> existingItemOpt = supply.getItems().stream()
-                        .filter(existingItem -> existingItem.getProduct().getProId().equals(itemDto.getProductId())
-                                             && existingItem.getShop().getShopId().equals(itemDto.getShopId()))
-                        .findFirst();
-
-                if (existingItemOpt.isPresent()) {
-                    ShopSupplyItem existingItem = existingItemOpt.get();
-                    existingItem.setQtySupplied(itemDto.getQuantity());
-                    existingItem.setQtyReturned(itemDto.getReturnQuantity());
-                    existingItem.setUnitPrice(itemDto.getPrice() != null ? itemDto.getPrice() : existingItem.getProduct().getUnitPrice());
-                } else {
-                    supply.getItems().add(mapItemDTOToEntity(itemDto, supply));
-                }
+                supply.getItems().add(mapItemDTOToEntity(itemDto, supply));
             }
+        }
+
+        // Recalculate outstanding amount
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        if (supply.getItems() != null) {
+            for (ShopSupplyItem item : supply.getItems()) {
+                BigDecimal price = item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO;
+                totalAmount = totalAmount.add(price.multiply(BigDecimal.valueOf(item.getQtySupplied() - item.getQtyReturned() - item.getQtyExpired())));
+            }
+        }
+        
+        BigDecimal paid = supply.getPaidAmount() != null ? supply.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal newOutstanding = totalAmount.subtract(paid);
+        if (newOutstanding.compareTo(BigDecimal.ZERO) < 0) {
+            newOutstanding = BigDecimal.ZERO;
+        }
+        supply.setOutstandingAmount(newOutstanding);
+
+        if (newOutstanding.compareTo(BigDecimal.ZERO) <= 0 && supply.getItems() != null && !supply.getItems().isEmpty()) {
+            supply.setPaymentStatus("COMPLETED");
+        } else {
+            supply.setPaymentStatus("UNCOMPLETED");
         }
 
         ShopSupply updated = shopSupplyRepository.save(supply);
@@ -123,6 +138,39 @@ public class ShopSupplyService {
             throw new ResourceNotFoundException("Supply not found: " + id);
         }
         shopSupplyRepository.deleteById(id);
+    }
+
+    // PAYMENT
+    public ShopSupplyDTO addPayment(String id, BigDecimal amount) {
+        ShopSupply supply = shopSupplyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Supply not found: " + id));
+
+        BigDecimal currentPaid = supply.getPaidAmount() != null ? supply.getPaidAmount() : BigDecimal.ZERO;
+        supply.setPaidAmount(currentPaid.add(amount));
+
+        // Recalculate total amount from items to avoid legacy data issues
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        if (supply.getItems() != null) {
+            for (ShopSupplyItem item : supply.getItems()) {
+                BigDecimal price = item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO;
+                totalAmount = totalAmount.add(price.multiply(BigDecimal.valueOf(item.getQtySupplied() - item.getQtyReturned() - item.getQtyExpired())));
+            }
+        }
+
+        BigDecimal newOutstanding = totalAmount.subtract(supply.getPaidAmount());
+        if (newOutstanding.compareTo(BigDecimal.ZERO) < 0) {
+            newOutstanding = BigDecimal.ZERO;
+        }
+        supply.setOutstandingAmount(newOutstanding);
+
+        if (newOutstanding.compareTo(BigDecimal.ZERO) <= 0 && supply.getItems() != null && !supply.getItems().isEmpty()) {
+            supply.setPaymentStatus("COMPLETED");
+        } else {
+            supply.setPaymentStatus("UNCOMPLETED");
+        }
+
+        ShopSupply updated = shopSupplyRepository.save(supply);
+        return convertToDTO(updated);
     }
 
     // MAP ENTITY
@@ -201,6 +249,9 @@ public class ShopSupplyService {
 
         dto.setItems(itemDTOs);
         dto.setTotalAmount(total);
+        dto.setPaidAmount(supply.getPaidAmount());
+        dto.setOutstandingAmount(supply.getOutstandingAmount());
+        dto.setPaymentStatus(supply.getPaymentStatus());
         return dto;
     }
 }

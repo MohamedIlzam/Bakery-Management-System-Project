@@ -30,6 +30,9 @@ export interface ShopSupplyResponseDTO {
   shopId?: string;
   shopName: string;
   totalAmount: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  paymentStatus: string;
   items: ShopSupplyItemDTO[];
 }
 
@@ -56,5 +59,12 @@ export const shopSupplyService = {
 
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/shop-supplies/${id}`);
+  },
+
+  addPayment: async (id: string, amount: number): Promise<ShopSupplyResponseDTO> => {
+    const response = await apiClient.put<ShopSupplyResponseDTO>(`/shop-supplies/${id}/payment`, amount, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return response.data;
   },
 };
