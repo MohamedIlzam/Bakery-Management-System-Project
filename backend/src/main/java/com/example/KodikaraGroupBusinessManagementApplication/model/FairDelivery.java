@@ -47,6 +47,6 @@ public class FairDelivery {
     @JoinColumn(name = "driver_id")
     private Driver driver;
 
-    @OneToMany(mappedBy = "fairDelivery", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "fairDelivery", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<FairDeliveryItem> items = new ArrayList<>();
 }

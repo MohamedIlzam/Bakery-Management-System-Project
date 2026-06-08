@@ -15,4 +15,6 @@ public class ShopSupplyItemDTO {
     private String shopId;
     private BigDecimal price;
     private int quantity;
+    private int returnQuantity;
+    private int expiredQuantity;
 }

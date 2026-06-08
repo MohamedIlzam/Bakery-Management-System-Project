@@ -6,6 +6,7 @@ export interface FairDeliveryItemDTO {
   productId: string;
   qtySent: number;
   qtyRemaining?: number;
+  qtyExpired?: number;
   unitPrice: number;
 }
 

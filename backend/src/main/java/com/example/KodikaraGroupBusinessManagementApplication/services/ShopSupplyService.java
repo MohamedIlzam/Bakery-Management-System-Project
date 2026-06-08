@@ -28,13 +28,14 @@ public class ShopSupplyService {
     private final DriverRepository driverRepository;
     private final ProductRepository productRepository;
 
-    //CREATE
+    // CREATE
     public ShopSupplyDTO createShopSupply(ShopSupplyDTO supplyDto) {
         Vehicle vehicle = vehicleRepository.findById(supplyDto.getVehicleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found: " + supplyDto.getVehicleId()));
 
         User salesman = userRepository.findById(supplyDto.getSalesmanId())
-                .orElseThrow(() -> new ResourceNotFoundException("Salesman (User) not found: " + supplyDto.getSalesmanId()));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Salesman (User) not found: " + supplyDto.getSalesmanId()));
 
         ShopSupply shopSupply = new ShopSupply();
         shopSupply.setSupplyId(IdGenerator.generate("SUPP"));
@@ -60,7 +61,7 @@ public class ShopSupplyService {
         return convertToDTO(savedSupply);
     }
 
-    //READ
+    // READ
     @Transactional(readOnly = true)
     public List<ShopSupplyDTO> getAllShopSupplies() {
         return shopSupplyRepository.findAll().stream()
@@ -68,12 +69,13 @@ public class ShopSupplyService {
                 .collect(Collectors.toList());
     }
 
-    //UPDATE
+    // UPDATE
     public ShopSupplyDTO updateShopSupply(String id, ShopSupplyDTO dto) {
         ShopSupply supply = shopSupplyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Supply not found: " + id));
 
-        if(dto.getSupplyDate() != null) supply.setSupplyDate(dto.getSupplyDate());
+        if (dto.getSupplyDate() != null)
+            supply.setSupplyDate(dto.getSupplyDate());
 
         if (dto.getVehicleId() != null) {
             Vehicle vehicle = vehicleRepository.findById(dto.getVehicleId())
@@ -88,9 +90,26 @@ public class ShopSupplyService {
         }
 
         if (dto.getItems() != null) {
-            supply.getItems().clear();
+            // Remove items that are no longer in the DTO
+            List<String> incomingKeys = dto.getItems().stream()
+                    .map(item -> item.getProductId() + "-" + item.getShopId())
+                    .collect(Collectors.toList());
+            supply.getItems().removeIf(existingItem -> !incomingKeys.contains(existingItem.getProduct().getProId() + "-" + existingItem.getShop().getShopId()));
+
             for (ShopSupplyItemDTO itemDto : dto.getItems()) {
-                supply.getItems().add(mapItemDTOToEntity(itemDto, supply));
+                java.util.Optional<ShopSupplyItem> existingItemOpt = supply.getItems().stream()
+                        .filter(existingItem -> existingItem.getProduct().getProId().equals(itemDto.getProductId())
+                                             && existingItem.getShop().getShopId().equals(itemDto.getShopId()))
+                        .findFirst();
+
+                if (existingItemOpt.isPresent()) {
+                    ShopSupplyItem existingItem = existingItemOpt.get();
+                    existingItem.setQtySupplied(itemDto.getQuantity());
+                    existingItem.setQtyReturned(itemDto.getReturnQuantity());
+                    existingItem.setUnitPrice(itemDto.getPrice() != null ? itemDto.getPrice() : existingItem.getProduct().getUnitPrice());
+                } else {
+                    supply.getItems().add(mapItemDTOToEntity(itemDto, supply));
+                }
             }
         }
 
@@ -98,15 +117,15 @@ public class ShopSupplyService {
         return convertToDTO(updated);
     }
 
-    //DELETE
+    // DELETE
     public void deleteShopSupply(String id) {
-        if(!shopSupplyRepository.existsById(id)) {
+        if (!shopSupplyRepository.existsById(id)) {
             throw new ResourceNotFoundException("Supply not found: " + id);
         }
         shopSupplyRepository.deleteById(id);
     }
 
-    //MAP ENTITY
+    // MAP ENTITY
     private ShopSupplyItem mapItemDTOToEntity(ShopSupplyItemDTO itemDTO, ShopSupply parent) {
         ShopSupplyItem item = new ShopSupplyItem();
         item.setItemId(IdGenerator.generate("SITE"));
@@ -126,11 +145,13 @@ public class ShopSupplyService {
         item.setProduct(product);
 
         item.setQtySupplied(itemDTO.getQuantity());
-        item.setUnitPrice(product.getUnitPrice());
+        item.setQtyReturned(itemDTO.getReturnQuantity());
+        item.setQtyExpired(itemDTO.getExpiredQuantity());
+        item.setUnitPrice(itemDTO.getPrice() != null ? itemDTO.getPrice() : product.getUnitPrice());
         return item;
     }
 
-    //CONVERT DTO
+    // CONVERT DTO
     private ShopSupplyDTO convertToDTO(ShopSupply supply) {
         ShopSupplyDTO dto = new ShopSupplyDTO();
         dto.setSupplyId(supply.getSupplyId());
@@ -157,18 +178,23 @@ public class ShopSupplyService {
                 ShopSupplyItemDTO itemDto = new ShopSupplyItemDTO();
                 if (item.getShop() != null) {
                     itemDto.setShopId(item.getShop().getShopId());
-                    if (dto.getShopName() == null) dto.setShopName(item.getShop().getShopName());
+                    if (dto.getShopName() == null) {
+                        dto.setShopName(item.getShop().getShopName());
+                        dto.setShopId(item.getShop().getShopId());
+                    }
                 }
                 if (item.getProduct() != null) {
                     itemDto.setProductId(item.getProduct().getProId());
                     itemDto.setProductName(item.getProduct().getName());
                 }
                 itemDto.setQuantity(item.getQtySupplied());
+                itemDto.setReturnQuantity(item.getQtyReturned());
+                itemDto.setExpiredQuantity(item.getQtyExpired());
 
                 BigDecimal price = item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO;
                 itemDto.setPrice(price);
 
-                total = total.add(price.multiply(BigDecimal.valueOf(item.getQtySupplied())));
+                total = total.add(price.multiply(BigDecimal.valueOf(item.getQtySupplied() - item.getQtyReturned() - item.getQtyExpired())));
                 itemDTOs.add(itemDto);
             }
         }

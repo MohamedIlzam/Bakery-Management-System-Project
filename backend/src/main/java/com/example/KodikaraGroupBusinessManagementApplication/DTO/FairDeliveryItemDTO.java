@@ -14,6 +14,7 @@ public class FairDeliveryItemDTO {
 
     private int qtySent;
     private int qtyRemaining;
+    private int qtyExpired;
 
     private BigDecimal unitPrice = BigDecimal.ZERO;
 }

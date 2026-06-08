@@ -59,6 +59,7 @@ const Dashboard = () => {
       icon: FileText,
       path: "/reports",
       color: "from-bakery-gold to-primary",
+      roles: ["ROLE_OWNER", "ADMIN"],
     },
   ];
 
@@ -95,18 +96,20 @@ const Dashboard = () => {
               <h2 className="text-3xl font-bold text-bakery-brown mb-2">Management Dashboard</h2>
               <p className="text-muted-foreground">Select an operation to manage your bakery business</p>
             </div>
-            <Button
-              onClick={() => navigate("/manage")}
-              className="flex items-center gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90"
-            >
-              <Plus className="h-4 w-4" />
-              Manage Data
-            </Button>
+            {['ROLE_OWNER', 'ADMIN'].includes(userRole || '') && (
+              <Button
+                onClick={() => navigate("/manage")}
+                className="flex items-center gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+              >
+                <Plus className="h-4 w-4" />
+                Manage Data
+              </Button>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {dashboardCards.map((card) => {
+          {dashboardCards.filter(card => !card.roles || card.roles.includes(userRole || '')).map((card) => {
             const Icon = card.icon;
             return (
               <Card 

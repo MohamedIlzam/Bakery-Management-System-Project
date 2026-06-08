@@ -34,6 +34,7 @@ interface ProductItem {
   sentQuantity: number;
   price: number;
   returnedQuantity: number;
+  expiredQuantity: number;
 }
 
 const FairDelivery = () => {
@@ -42,6 +43,7 @@ const FairDelivery = () => {
   
   const [deliveries, setDeliveries] = useState<FairDeliveryDTO[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [filterFairName, setFilterFairName] = useState<string>("all");
   const [editingDeliveryId, setEditingDeliveryId] = useState<string | null>(null);
   
   // Available options
@@ -58,7 +60,7 @@ const FairDelivery = () => {
   const [extraPayments, setExtraPayments] = useState(0);
   const [dieselAmount, setDieselAmount] = useState(0);
   const [products, setProducts] = useState<ProductItem[]>([
-    { id: "1", productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0 }
+    { id: "1", productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0, expiredQuantity: 0 }
   ]);
 
   // Load all data on mount
@@ -123,7 +125,7 @@ const FairDelivery = () => {
   const addProduct = () => {
     setProducts([
       ...products,
-      { id: Date.now().toString(), productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0 }
+      { id: Date.now().toString(), productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0, expiredQuantity: 0 }
     ]);
   };
 
@@ -212,6 +214,7 @@ const FairDelivery = () => {
         qtySent: p.sentQuantity,
         unitPrice: p.price,
         qtyRemaining: p.returnedQuantity,
+        qtyExpired: p.expiredQuantity,
       }));
 
       const deliveryData: FairDeliveryDTO = {
@@ -282,6 +285,7 @@ const FairDelivery = () => {
         sentQuantity: item.qtySent,
         price: item.unitPrice || 0,
         returnedQuantity: item.qtyRemaining || 0,
+        expiredQuantity: item.qtyExpired || 0,
       }));
       setProducts(loadedProducts);
     }
@@ -332,7 +336,7 @@ const FairDelivery = () => {
     setTax(0);
     setExtraPayments(0);
     setDieselAmount(0);
-    setProducts([{ id: "1", productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0 }]);
+    setProducts([{ id: "1", productId: "", name: "", sentQuantity: 0, price: 0, returnedQuantity: 0, expiredQuantity: 0 }]);
   };
 
   return (
@@ -437,8 +441,9 @@ const FairDelivery = () => {
                       <TableRow>
                         <TableHead>Product</TableHead>
                         <TableHead>Sent Qty</TableHead>
-                        <TableHead>Price (Rs.)</TableHead>
                         <TableHead>Returned Qty</TableHead>
+                        <TableHead>Expired Qty</TableHead>
+                        <TableHead>Price (Rs.)</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -482,10 +487,10 @@ const FairDelivery = () => {
                             <Input
                               type="number"
                               min="0"
-                              value={product.price}
-                              readOnly
-                              placeholder="Auto"
-                              className="h-9 bg-muted"
+                              value={product.returnedQuantity}
+                              onChange={(e) => updateProduct(product.id, "returnedQuantity", Math.max(0, Number(e.target.value)))}
+                              placeholder="0"
+                              className="h-9"
                               disabled={isLoading}
                             />
                           </TableCell>
@@ -493,9 +498,21 @@ const FairDelivery = () => {
                             <Input
                               type="number"
                               min="0"
-                              value={product.returnedQuantity}
-                              onChange={(e) => updateProduct(product.id, "returnedQuantity", Math.max(0, Number(e.target.value)))}
+                              value={product.expiredQuantity}
+                              onChange={(e) => updateProduct(product.id, "expiredQuantity", Math.max(0, Number(e.target.value)))}
                               placeholder="0"
+                              className="h-9"
+                              disabled={isLoading}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={product.price}
+                              onChange={(e) => updateProduct(product.id, "price", Math.max(0, Number(e.target.value)))}
+                              placeholder="0.00"
                               className="h-9"
                               disabled={isLoading}
                             />
@@ -575,11 +592,28 @@ const FairDelivery = () => {
           </Card>
         </div>
 
-        {/* Saved Deliveries List */}
-        {deliveries.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-bakery-brown">Saved Deliveries ({deliveries.length})</h2>
-            {deliveries.map((delivery) => (
+        {/* Saved Deliveries Filter and List */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center bg-white/50 p-4 rounded-xl border border-white/60 shadow-sm backdrop-blur-sm">
+            <h2 className="text-xl font-semibold text-bakery-brown">Saved Deliveries</h2>
+            <div className="flex items-center space-x-2">
+              <Label className="text-sm font-medium text-bakery-brown whitespace-nowrap">Filter by Fair:</Label>
+              <Select value={filterFairName} onValueChange={setFilterFairName}>
+                <SelectTrigger className="w-[200px] bg-white">
+                  <SelectValue placeholder="All Fairs" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Fairs</SelectItem>
+                  {Array.from(new Set(deliveries.map(d => d.fairName))).map((fair) => (
+                    <SelectItem key={fair} value={fair!}>{fair}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {deliveries.filter(d => filterFairName === "all" || d.fairName === filterFairName).length > 0 ? (
+            deliveries.filter(d => filterFairName === "all" || d.fairName === filterFairName).map((delivery) => (
               <Card key={delivery.deliveryId} className="overflow-hidden">
                 <div className="p-4 bg-gradient-to-r from-primary/5 to-accent/5">
                   <div className="flex justify-between items-start">
@@ -597,19 +631,22 @@ const FairDelivery = () => {
                       <p className="text-sm text-muted-foreground">Date: {delivery.deliveryDate}</p>
                       <p className="text-sm text-muted-foreground">ID: {delivery.deliveryId}</p>
                       
-                      <div className="mt-3 space-y-2">
-                        <p className="text-sm font-medium">Products:</p>
-                        {delivery.items?.map((item, idx) => (
-                          <div key={idx} className="pl-4 text-sm">
-                            <p>
-                              Product ID: {item.productId} - 
-                              Sent: {item.qtySent}, 
-                              Returned: {item.qtyRemaining || 0}, 
-                              Price: Rs. {item.unitPrice}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
+                      {delivery.items && delivery.items.length > 0 && (
+                        <div className="mt-2 text-sm bg-white p-2 rounded border">
+                            {delivery.items.map((item, idx) => {
+                                const productName = availableProducts.find(p => p.proId === item.productId)?.name || item.productId;
+                                return (
+                                <div key={idx} className="flex justify-between">
+                                  <span>{productName} (Sent: {item.qtySent}, Ret: {item.qtyRemaining || 0}, Exp: {item.qtyExpired || 0})</span>
+                                  <span>Rs. {Number((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)).toFixed(2)}</span>
+                                </div>
+                                );
+                            })}
+                            <div className="border-t mt-1 pt-1 font-bold text-right">
+                              Total Sales: Rs. {delivery.items.reduce((sum, item) => sum + ((item.qtySent - (item.qtyRemaining || 0) - (item.qtyExpired || 0)) * (item.unitPrice || 0)), 0).toFixed(2)}
+                            </div>
+                        </div>
+                      )}
 
                       <div className="mt-3 pt-3 border-t space-y-1">
                         <div className="grid grid-cols-2 gap-2 text-sm">
@@ -657,9 +694,13 @@ const FairDelivery = () => {
                   </div>
                 </div>
               </Card>
-            ))}
-          </div>
-        )}
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground bg-white/50 rounded-xl border border-dashed">
+              No deliveries found matching your filter.
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

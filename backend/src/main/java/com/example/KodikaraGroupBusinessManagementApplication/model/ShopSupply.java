@@ -31,7 +31,7 @@ public class ShopSupply {
     private Driver driver;
     @Column(name = "supply_date",nullable = false)
     private LocalDate supplyDate;
-    @OneToMany(mappedBy = "shopSupply", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "shopSupply", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     protected List<ShopSupplyItem> items;
