@@ -411,7 +411,15 @@ const ShopDelivery = () => {
   const loadShops = async () => { try { setAvailableShops(await shopService.list()); } catch (e) {} };
   const loadDrivers = async () => { try { setAvailableDrivers(await driverService.list()); } catch (e) {} };
   const loadVehicles = async () => { try { setAvailableVehicles(await vehicleService.list()); } catch (e) {} };
-  const loadDeliveries = async () => { try { setSavedDeliveries(await shopSupplyService.list()); } catch (e) {} };
+  const loadDeliveries = async () => { 
+    try { 
+      const data = await shopSupplyService.list();
+      setSavedDeliveries(data.sort((a, b) => {
+        const dateDiff = new Date(b.supplyDate || '').getTime() - new Date(a.supplyDate || '').getTime();
+        return dateDiff !== 0 ? dateDiff : (b.supplyId || '').localeCompare(a.supplyId || '');
+      }));
+    } catch (e) {} 
+  };
 
   const addProduct = () => {
     setProducts([...products, { id: Date.now().toString(), productId: "", productName: "", quantity: 0, returnQuantity: 0, expiredQuantity: 0, price: 0 }]);

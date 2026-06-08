@@ -91,7 +91,10 @@ const FairDelivery = () => {
   const loadDeliveries = async () => {
     try {
       const data = await fairDeliveryService.list();
-      setDeliveries(data);
+      setDeliveries(data.sort((a, b) => {
+        const dateDiff = new Date(b.deliveryDate || '').getTime() - new Date(a.deliveryDate || '').getTime();
+        return dateDiff !== 0 ? dateDiff : (b.deliveryId || '').localeCompare(a.deliveryId || '');
+      }));
     } catch (error: any) {
       console.error("Failed to load deliveries:", error);
     }
