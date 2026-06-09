@@ -20,11 +20,14 @@ public class ShopService {
     private final ShopRepository shopRepository;
 
     public ShopDTO createShop(ShopDTO dto) {
+        if (dto.getContactNo() == null || !dto.getContactNo().trim().matches("^\\d{9,10}$")) {
+            throw new IllegalArgumentException("Contact number must be a number of 9 or 10 digits");
+        }
         Shop shop = new Shop();
         shop.setShopId(IdGenerator.generate("SHOP"));
         shop.setShopName(dto.getShopName());
         shop.setOwnerName(dto.getOwnerName());
-        shop.setContactNo(dto.getContactNo());
+        shop.setContactNo(dto.getContactNo().trim());
         shop.setAddress(dto.getAddress());
         return convertToDTO(shopRepository.save(shop));
     }
@@ -36,12 +39,15 @@ public class ShopService {
     }
 
     public ShopDTO updateShop(String id, ShopDTO dto) {
+        if (dto.getContactNo() == null || !dto.getContactNo().trim().matches("^\\d{9,10}$")) {
+            throw new IllegalArgumentException("Contact number must be a number of 9 or 10 digits");
+        }
         Shop shop = shopRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Shop not found"));
 
         shop.setShopName(dto.getShopName());
         shop.setOwnerName(dto.getOwnerName());
-        shop.setContactNo(dto.getContactNo());
+        shop.setContactNo(dto.getContactNo().trim());
         shop.setAddress(dto.getAddress());
         return convertToDTO(shopRepository.save(shop));
     }
