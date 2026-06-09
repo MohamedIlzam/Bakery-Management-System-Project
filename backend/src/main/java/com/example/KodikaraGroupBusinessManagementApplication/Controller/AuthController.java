@@ -52,6 +52,10 @@ package com.example.KodikaraGroupBusinessManagementApplication.Controller;
 
 import com.example.KodikaraGroupBusinessManagementApplication.DTO.LoginRequest;
 import com.example.KodikaraGroupBusinessManagementApplication.DTO.LoginResponse;
+import com.example.KodikaraGroupBusinessManagementApplication.DTO.MessageResponse;
+import com.example.KodikaraGroupBusinessManagementApplication.DTO.UserDTO;
+import com.example.KodikaraGroupBusinessManagementApplication.model.User;
+import com.example.KodikaraGroupBusinessManagementApplication.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +78,9 @@ public class AuthController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserService userService;
 
     //The Repository that handles session saving
     private SecurityContextRepository securityContextRepository = new HttpSessionSecurityContextRepository();
@@ -108,6 +115,13 @@ public class AuthController {
         } catch (AuthenticationException e) {
             return new ResponseEntity<>("Invalid username or password", HttpStatus.UNAUTHORIZED);
         }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
+        User createdUser = userService.createSalesman(userDTO);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new MessageResponse("Account created for " + createdUser.getUsername() + " with role " + createdUser.getRole()));
     }
 }
 
