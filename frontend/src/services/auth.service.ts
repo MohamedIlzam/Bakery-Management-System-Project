@@ -11,9 +11,24 @@ export interface LoginResponse {
   message: string;
 }
 
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  role?: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+}
+
 export const authService = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
     const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
+    return response.data;
+  },
+
+  register: async (payload: RegisterRequest): Promise<RegisterResponse> => {
+    const response = await apiClient.post<RegisterResponse>('/auth/register', payload);
     return response.data;
   },
 
