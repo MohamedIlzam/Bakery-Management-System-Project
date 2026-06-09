@@ -22,6 +22,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDTO create(ProductDTO dto) {
+        if (dto.getCategory() == null || dto.getCategory().trim().isEmpty()) {
+            throw new IllegalArgumentException("Category is required");
+        }
         if (repo.findByName(dto.getName()).isPresent()) {
             throw new IllegalArgumentException("Product already exists with name: " + dto.getName());
         }
@@ -37,6 +40,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDTO update(String id, ProductDTO dto) {
+        if (dto.getCategory() == null || dto.getCategory().trim().isEmpty()) {
+            throw new IllegalArgumentException("Category is required");
+        }
         Product p = repo.findById(id).orElseThrow(() -> notFound(id));
         // update allowed fields only
         p.setName(dto.getName());
@@ -61,8 +67,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void softDelete(String id) {
         Product p = repo.findById(id).orElseThrow(() -> notFound(id));
-        p.setActive(false);
-        repo.save(p);
+        repo.delete(p);
     }
 
     // -------- mapping helpers --------
