@@ -7,12 +7,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Edit2, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Edit2, Trash2, Loader2, Check, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { productService, ProductDTO } from "@/services/product.service";
 import { shopService, ShopDTO } from "@/services/shop.service";
 import { salesmanService, SalesmanDTO } from "@/services/salesman.service";
 import { useAuth } from "@/contexts/AuthContext";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+
+const categories = [
+  "Bread & Loaves",
+  "Buns",
+  "Short Eats",
+  "Pastries",
+  "Cakes & Swiss Rolls",
+  "Rusks & Dry Bakery",
+  "Biscuits & Cookies",
+  "Packaged Snacks",
+  "Beverages"
+];
 
 const Manage = () => {
   const navigate = useNavigate();
@@ -26,6 +41,26 @@ const Manage = () => {
   const [productUnitPrice, setProductUnitPrice] = useState("");
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [openCategoryPopover, setOpenCategoryPopover] = useState(false);
+
+  // Products Search State
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [productSearchField, setProductSearchField] = useState("name");
+
+  const filteredProducts = products.filter((p) => {
+    if (!productSearchQuery.trim()) return true;
+    const query = productSearchQuery.toLowerCase().trim();
+    if (productSearchField === "name") {
+      return p.name.toLowerCase().includes(query);
+    }
+    if (productSearchField === "category") {
+      return (p.category || "").toLowerCase().includes(query);
+    }
+    if (productSearchField === "price") {
+      return p.unitPrice.toString().includes(query);
+    }
+    return true;
+  });
 
   // Shops State
   const [shops, setShops] = useState<ShopDTO[]>([]);
@@ -35,6 +70,28 @@ const Manage = () => {
   const [shopAddress, setShopAddress] = useState("");
   const [editingShopId, setEditingShopId] = useState<string | null>(null);
   const [isLoadingShops, setIsLoadingShops] = useState(false);
+
+  // Shops Search State
+  const [shopSearchQuery, setShopSearchQuery] = useState("");
+  const [shopSearchField, setShopSearchField] = useState("name"); // default to Shop Name
+
+  const filteredShops = shops.filter((s) => {
+    if (!shopSearchQuery.trim()) return true;
+    const query = shopSearchQuery.toLowerCase().trim();
+    if (shopSearchField === "name") {
+      return s.shopName.toLowerCase().includes(query);
+    }
+    if (shopSearchField === "owner") {
+      return s.ownerName.toLowerCase().includes(query);
+    }
+    if (shopSearchField === "contact") {
+      return s.contactNo.toLowerCase().includes(query);
+    }
+    if (shopSearchField === "location") {
+      return s.address.toLowerCase().includes(query);
+    }
+    return true;
+  });
 
   // Salesmen State
   const [salesmen, setSalesmen] = useState<SalesmanDTO[]>([]);
@@ -84,10 +141,10 @@ const Manage = () => {
   };
 
   const handleSaveProduct = async () => {
-    if (!productName.trim() || !productUnitPrice) {
+    if (!productName.trim() || !productCategory.trim() || !productUnitPrice) {
       toast({
         title: "Error",
-        description: "Product name and price are required",
+        description: "Product name, category, and price are required",
         variant: "destructive",
       });
       return;
@@ -183,6 +240,16 @@ const Manage = () => {
       toast({
         title: "Error",
         description: "All fields are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const contactRegex = /^\d{9,10}$/;
+    if (!contactRegex.test(shopContactNo.trim())) {
+      toast({
+        title: "Error",
+        description: "Contact number must be exactly 9 or 10 digits",
         variant: "destructive",
       });
       return;
@@ -328,13 +395,13 @@ const Manage = () => {
 
   const handleEditSalesman = (salesman: SalesmanDTO) => {
     setSalesmanUsername(salesman.username);
-    
+
     // Normalize role to match dropdown Select options
     let cleanRole = salesman.role || "";
     if (cleanRole === "ROLE_SALESMAN") cleanRole = "Salesman";
     else if (cleanRole === "ROLE_OWNER" || cleanRole === "ADMIN") cleanRole = "Owner";
     else if (cleanRole === "ROLE_DRIVER") cleanRole = "Driver";
-    
+
     setSalesmanRole(cleanRole);
     setEditingSalesmanId(salesman.userId!);
   };
@@ -402,15 +469,56 @@ const Manage = () => {
                       disabled={isLoadingProducts}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="productCategory">Category</Label>
-                    <Input
-                      id="productCategory"
-                      value={productCategory}
-                      onChange={(e) => setProductCategory(e.target.value)}
-                      placeholder="Category"
-                      disabled={isLoadingProducts}
-                    />
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="productCategory">Category *</Label>
+                    <Popover open={openCategoryPopover} onOpenChange={setOpenCategoryPopover}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="productCategory"
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openCategoryPopover}
+                          className="w-full justify-between font-normal text-left"
+                          disabled={isLoadingProducts}
+                        >
+                          {productCategory
+                            ? categories.find((cat) => cat === productCategory) || productCategory
+                            : "Select category"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search category..." />
+                          <CommandList>
+                            <CommandEmpty>No category found.</CommandEmpty>
+                            <CommandGroup>
+                              {categories.map((cat) => (
+                                <CommandItem
+                                  key={cat}
+                                  value={cat}
+                                  onSelect={(currentValue) => {
+                                    const matchedCat = categories.find(
+                                      (c) => c.toLowerCase() === currentValue.toLowerCase()
+                                    );
+                                    setProductCategory(matchedCat || cat);
+                                    setOpenCategoryPopover(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      productCategory === cat ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {cat}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div>
                     <Label htmlFor="productUnitPrice">Unit Price (Rs.) *</Label>
@@ -449,8 +557,26 @@ const Manage = () => {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Products List ({products.length})</CardTitle>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pb-4">
+                  <CardTitle className="text-xl font-bold">Products List ({filteredProducts.length})</CardTitle>
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
+                    <Input
+                      placeholder="Search..."
+                      value={productSearchQuery}
+                      onChange={(e) => setProductSearchQuery(e.target.value)}
+                      className="h-9 w-full sm:w-[240px]"
+                    />
+                    <Select value={productSearchField} onValueChange={setProductSearchField}>
+                      <SelectTrigger className="h-9 w-[110px]">
+                        <SelectValue placeholder="Search by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name">Name</SelectItem>
+                        <SelectItem value="category">Category</SelectItem>
+                        <SelectItem value="price">Price</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {isLoadingProducts ? (
@@ -472,7 +598,7 @@ const Manage = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {products.map((product) => (
+                          {filteredProducts.map((product) => (
                             <TableRow key={product.proId}>
                               <TableCell>{product.name}</TableCell>
                               <TableCell>{product.category || "-"}</TableCell>
@@ -581,8 +707,27 @@ const Manage = () => {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Shops List ({shops.length})</CardTitle>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pb-4">
+                  <CardTitle className="text-xl font-bold">Shops List ({filteredShops.length})</CardTitle>
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
+                    <Input
+                      placeholder="Search..."
+                      value={shopSearchQuery}
+                      onChange={(e) => setShopSearchQuery(e.target.value)}
+                      className="h-9 w-full sm:w-[240px]"
+                    />
+                    <Select value={shopSearchField} onValueChange={setShopSearchField}>
+                      <SelectTrigger className="h-9 w-[110px]">
+                        <SelectValue placeholder="Search by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name">Shop Name</SelectItem>
+                        <SelectItem value="owner">Owner</SelectItem>
+                        <SelectItem value="contact">Contact</SelectItem>
+                        <SelectItem value="location">Location</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {isLoadingShops ? (
@@ -605,7 +750,7 @@ const Manage = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {shops.map((shop) => (
+                          {filteredShops.map((shop) => (
                             <TableRow key={shop.shopId}>
                               <TableCell>{shop.shopName}</TableCell>
                               <TableCell>{shop.ownerName}</TableCell>

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with default config
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8081/api',
+  baseURL: '/api',
   withCredentials: true, // Important for session-based authentication
   headers: {
     'Content-Type': 'application/json',
