@@ -1103,7 +1103,6 @@ const Manage = () => {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Username</TableHead>
-                            <TableHead>User ID</TableHead>
                             <TableHead>Role</TableHead>
                             <TableHead>Actions</TableHead>
                           </TableRow>
@@ -1114,7 +1113,6 @@ const Manage = () => {
                             .map((salesman) => (
                               <TableRow key={salesman.userId}>
                                 <TableCell>{salesman.username}</TableCell>
-                                <TableCell>{salesman.userId}</TableCell>
                                 <TableCell>{formatRole(salesman.role)}</TableCell>
                                 <TableCell>
                                   <div className="flex gap-2">
@@ -1231,7 +1229,6 @@ const Manage = () => {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Driver ID</TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>Contact</TableHead>
                             <TableHead>Actions</TableHead>
@@ -1240,7 +1237,6 @@ const Manage = () => {
                         <TableBody>
                           {filteredDrivers.map((driver) => (
                             <TableRow key={driver.driverId}>
-                              <TableCell>{driver.driverId}</TableCell>
                               <TableCell>{driver.name}</TableCell>
                               <TableCell>{driver.contact || "-"}</TableCell>
                               <TableCell>
@@ -1365,7 +1361,6 @@ const Manage = () => {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Vehicle ID</TableHead>
                             <TableHead>Vehicle No</TableHead>
                             <TableHead>Type</TableHead>
                             <TableHead>Actions</TableHead>
@@ -1374,7 +1369,6 @@ const Manage = () => {
                         <TableBody>
                           {filteredVehicles.map((vehicle) => (
                             <TableRow key={vehicle.vehicleId}>
-                              <TableCell>{vehicle.vehicleId}</TableCell>
                               <TableCell>{vehicle.vehicleNo}</TableCell>
                               <TableCell>{vehicle.vehicleType || "-"}</TableCell>
                               <TableCell>

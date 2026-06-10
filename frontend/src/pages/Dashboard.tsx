@@ -176,7 +176,9 @@ const Dashboard = () => {
                             </div>
                             <div className="flex gap-1 shrink-0 items-center">
                               {p.role === 'ROLE_OWNER' && (
-                                <AlertTriangle className="h-4 w-4 text-destructive mr-1 animate-pulse" title="Warning: Granting OWNER permissions" />
+                                <span title="Warning: Granting OWNER permissions">
+                                  <AlertTriangle className="h-4 w-4 text-destructive mr-1 animate-pulse" />
+                                </span>
                               )}
                               <Button
                                 size="icon"
