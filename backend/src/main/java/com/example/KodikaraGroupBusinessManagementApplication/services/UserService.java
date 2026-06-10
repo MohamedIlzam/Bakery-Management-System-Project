@@ -24,11 +24,13 @@ public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.mail.javamail.JavaMailSender mailSender;
 
     @Autowired
-    public UserService(UserRepository userRepository, @Lazy PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, @Lazy PasswordEncoder passwordEncoder, @Autowired(required = false) org.springframework.mail.javamail.JavaMailSender mailSender) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.mailSender = mailSender;
     }
 
     // *** ADD THIS METHOD - Required by UserDetailsService ***
@@ -76,6 +78,7 @@ public class UserService implements UserDetailsService {
         newUser.setUserId(IdGenerator.userId());
         newUser.setUsername(userDTO.getUsername());
         newUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        newUser.setRecoveryEmail(userDTO.getRecoveryEmail());
         
         // Map the role back to DB/Spring Security compatible values
         String role = userDTO.getRole();
@@ -147,5 +150,131 @@ public class UserService implements UserDetailsService {
             throw new ResourceNotFoundException("User not found with id: " + userId);
         }
         userRepository.deleteById(userId);
+    }
+
+    public void sendVerificationCode(String usernameOrEmail) {
+        User user = userRepository.findByUsernameOrRecoveryEmail(usernameOrEmail, usernameOrEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username or email: " + usernameOrEmail));
+
+        // Generate 6 digit code
+        String code = String.format("%06d", new java.util.Random().nextInt(999999));
+        user.setVerificationCode(code);
+        user.setCodeExpiryTime(java.time.LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        // Print code to console for easy local verification
+        System.out.println("=================================================");
+        System.out.println("VERIFICATION CODE FOR " + user.getUsername() + ": " + code);
+        System.out.println("=================================================");
+
+        // Send email if mailSender is available and email is present
+        if (mailSender != null && user.getRecoveryEmail() != null && !user.getRecoveryEmail().isEmpty()) {
+            try {
+                org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
+                message.setTo(user.getRecoveryEmail());
+                message.setSubject("Password Verification Code");
+                message.setText("Your verification code is: " + code + "\nIt will expire in 15 minutes.");
+                mailSender.send(message);
+            } catch (Exception e) {
+                System.out.println("Failed to send verification email: " + e.getMessage());
+            }
+        }
+    }
+
+    public boolean verifyCode(String usernameOrEmail, String code) {
+        User user = userRepository.findByUsernameOrRecoveryEmail(usernameOrEmail, usernameOrEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username or email: " + usernameOrEmail));
+
+        if (user.getVerificationCode() == null || !user.getVerificationCode().equals(code)) {
+            return false;
+        }
+
+        if (user.getCodeExpiryTime() == null || user.getCodeExpiryTime().isBefore(java.time.LocalDateTime.now())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public void resetPassword(String usernameOrEmail, String code, String newPassword) {
+        User user = userRepository.findByUsernameOrRecoveryEmail(usernameOrEmail, usernameOrEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username or email: " + usernameOrEmail));
+
+        if (!verifyCode(usernameOrEmail, code)) {
+            throw new IllegalArgumentException("Invalid or expired verification code");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setVerificationCode(null);
+        user.setCodeExpiryTime(null);
+        userRepository.save(user);
+    }
+
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
+    }
+
+    public void sendEmailUpdateCode(String username, String newEmail) {
+        User user = getUserByUsername(username);
+
+        // Generate 6 digit code
+        String code = String.format("%06d", new java.util.Random().nextInt(999999));
+        user.setVerificationCode(code);
+        user.setCodeExpiryTime(java.time.LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        // Print code to console for easy local verification
+        System.out.println("=================================================");
+        System.out.println("EMAIL UPDATE VERIFICATION CODE FOR " + user.getUsername() + ": " + code);
+        System.out.println("=================================================");
+
+        // Send email if mailSender is available
+        if (mailSender != null) {
+            try {
+                org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
+                message.setTo(newEmail);
+                message.setSubject("Email Update Verification Code");
+                message.setText("Your verification code is: " + code + "\nIt will expire in 15 minutes.");
+                mailSender.send(message);
+            } catch (Exception e) {
+                System.out.println("Failed to send email update verification email: " + e.getMessage());
+            }
+        }
+    }
+
+    public void updateRecoveryEmail(String username, String newEmail, String code) {
+        User user = getUserByUsername(username);
+
+        if (user.getVerificationCode() == null || !user.getVerificationCode().equals(code)) {
+            throw new IllegalArgumentException("Invalid verification code");
+        }
+
+        if (user.getCodeExpiryTime() == null || user.getCodeExpiryTime().isBefore(java.time.LocalDateTime.now())) {
+            throw new IllegalArgumentException("Verification code has expired");
+        }
+
+        user.setRecoveryEmail(newEmail);
+        user.setVerificationCode(null);
+        user.setCodeExpiryTime(null);
+        userRepository.save(user);
+    }
+
+    public User updateProfile(String currentUsername, UserUpdateDTO profileDTO) {
+        User user = getUserByUsername(currentUsername);
+
+        // If username is changing, check if new username already exists
+        if (profileDTO.getUsername() != null && !profileDTO.getUsername().equals(currentUsername)) {
+            if (userRepository.existsByUsername(profileDTO.getUsername())) {
+                throw new IllegalArgumentException("Username is already taken");
+            }
+            user.setUsername(profileDTO.getUsername());
+        }
+
+        if (profileDTO.getPassword() != null && !profileDTO.getPassword().trim().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(profileDTO.getPassword()));
+        }
+
+        return userRepository.save(user);
     }
 }

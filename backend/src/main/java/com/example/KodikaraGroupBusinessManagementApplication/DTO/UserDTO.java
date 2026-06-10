@@ -14,6 +14,11 @@ public class UserDTO {
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
     private String role;
+
+    @NotBlank(message = "Recovery email is required")
+    @jakarta.validation.constraints.Email(message = "Invalid email format")
+    private String recoveryEmail;
+
     //Getters and Setters
     public String getUsername() {
         return username;
@@ -35,5 +40,11 @@ public class UserDTO {
     }
     public void setRole(String role) {
         this.role = role;
+    }
+    public String getRecoveryEmail() {
+        return recoveryEmail;
+    }
+    public void setRecoveryEmail(String recoveryEmail) {
+        this.recoveryEmail = recoveryEmail;
     }
 }

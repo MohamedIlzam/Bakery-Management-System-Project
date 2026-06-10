@@ -123,6 +123,51 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new MessageResponse("Account created for " + createdUser.getUsername() + " with role " + createdUser.getRole()));
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody java.util.Map<String, String> request) {
+        String usernameOrEmail = request.get("usernameOrEmail");
+        if (usernameOrEmail == null || usernameOrEmail.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Username or recovery email is required"));
+        }
+        try {
+            userService.sendVerificationCode(usernameOrEmail);
+            return ResponseEntity.ok(new MessageResponse("Verification code sent successfully. Check your email."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/verify-code")
+    public ResponseEntity<?> verifyCode(@RequestBody java.util.Map<String, String> request) {
+        String usernameOrEmail = request.get("usernameOrEmail");
+        String code = request.get("code");
+        if (usernameOrEmail == null || code == null) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Username/email and verification code are required"));
+        }
+        boolean isValid = userService.verifyCode(usernameOrEmail, code);
+        if (isValid) {
+            return ResponseEntity.ok(new MessageResponse("Verification code is valid"));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse("Invalid or expired verification code"));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody java.util.Map<String, String> request) {
+        String usernameOrEmail = request.get("usernameOrEmail");
+        String code = request.get("code");
+        String newPassword = request.get("newPassword");
+        if (usernameOrEmail == null || code == null || newPassword == null || newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Invalid request data. Password must be at least 6 characters."));
+        }
+        try {
+            userService.resetPassword(usernameOrEmail, code, newPassword);
+            return ResponseEntity.ok(new MessageResponse("Password has been reset successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(e.getMessage()));
+        }
+    }
 }
 
 

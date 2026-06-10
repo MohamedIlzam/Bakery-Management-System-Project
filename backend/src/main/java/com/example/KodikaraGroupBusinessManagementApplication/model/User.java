@@ -21,6 +21,15 @@ public class User {
     @Column(name = "role", length = 20, nullable = false)
     private String role;
 
+    @Column(name = "recovery_email", length = 100, unique = true)
+    private String recoveryEmail;
+
+    @Column(name = "verification_code", length = 6)
+    private String verificationCode;
+
+    @Column(name = "code_expiry_time")
+    private java.time.LocalDateTime codeExpiryTime;
+
 
     public String getUserId() {
         return userId;
@@ -52,5 +61,29 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getRecoveryEmail() {
+        return recoveryEmail;
+    }
+
+    public void setRecoveryEmail(String recoveryEmail) {
+        this.recoveryEmail = recoveryEmail;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
+    }
+
+    public java.time.LocalDateTime getCodeExpiryTime() {
+        return codeExpiryTime;
+    }
+
+    public void setCodeExpiryTime(java.time.LocalDateTime codeExpiryTime) {
+        this.codeExpiryTime = codeExpiryTime;
     }
 }

@@ -12,6 +12,7 @@ import { Croissant } from "lucide-react";
 const Register = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
   const [role, setRole] = useState("ROLE_SALESMAN");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!username || !password) {
+    if (!username || !password || !recoveryEmail) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -31,7 +32,7 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      const response = await authService.register({ username, password, role });
+      const response = await authService.register({ username, password, role, recoveryEmail });
       toast({
         title: "Account Created",
         description: response.message,
@@ -86,6 +87,19 @@ const Register = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="recoveryEmail">Recovery Email</Label>
+              <Input
+                id="recoveryEmail"
+                type="email"
+                placeholder="email@example.com"
+                value={recoveryEmail}
+                onChange={(e) => setRecoveryEmail(e.target.value)}
                 disabled={isLoading}
                 required
               />
