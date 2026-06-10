@@ -73,7 +73,7 @@ const Reports = () => {
       const data = await fairDeliveryReportService.list();
       setFairReports(data.sort((a, b) => {
         const dateDiff = new Date(b.freportDate || b.reportMonth || '').getTime() - new Date(a.freportDate || a.reportMonth || '').getTime();
-        return dateDiff !== 0 ? dateDiff : (b.reportId || '').localeCompare(a.reportId || '');
+        return dateDiff !== 0 ? dateDiff : (b.freportID || '').localeCompare(a.freportID || '');
       }));
     } catch (error: any) {
       console.error("Failed to load fair reports:", error);
@@ -404,7 +404,7 @@ const Reports = () => {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={(e) => { e.stopPropagation(); handleDeleteFairReport(report.reportId); }}
+                                onClick={(e) => { e.stopPropagation(); handleDeleteFairReport(report.freportID); }}
                                 disabled={isLoadingFair}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -548,7 +548,7 @@ const Reports = () => {
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                Report Details: {selectedFairReport?.reportId}
+                Report Details: {selectedFairReport?.freportID}
               </DialogTitle>
               <DialogDescription>
                 {selectedFairReport?.reportType === 'DAILY' ? 'Daily' : 'Monthly'} Report for {selectedFairReport?.reportType === 'DAILY' ? selectedFairReport.freportDate : selectedFairReport?.reportMonth}
