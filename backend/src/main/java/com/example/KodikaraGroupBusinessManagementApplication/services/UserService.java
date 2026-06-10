@@ -79,6 +79,7 @@ public class UserService implements UserDetailsService {
         newUser.setUsername(userDTO.getUsername());
         newUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         newUser.setRecoveryEmail(userDTO.getRecoveryEmail());
+        newUser.setApproved(true); // Owner created users are pre-approved
         
         // Map the role back to DB/Spring Security compatible values
         String role = userDTO.getRole();
@@ -208,6 +209,59 @@ public class UserService implements UserDetailsService {
         user.setVerificationCode(null);
         user.setCodeExpiryTime(null);
         userRepository.save(user);
+    }
+
+    public User registerUser(UserDTO userDTO) {
+        if (userRepository.existsByUsername(userDTO.getUsername())) {
+            throw new IllegalArgumentException("Username already registered");
+        }
+        User newUser = new User();
+        newUser.setUserId(IdGenerator.userId());
+        newUser.setUsername(userDTO.getUsername());
+        newUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        newUser.setRecoveryEmail(userDTO.getRecoveryEmail());
+
+        String role = userDTO.getRole();
+        if (role == null || role.trim().isEmpty()) {
+            role = "ROLE_SALESMAN";
+        } else {
+            if ("Salesman".equalsIgnoreCase(role)) {
+                role = "ROLE_SALESMAN";
+            } else if ("Owner".equalsIgnoreCase(role)) {
+                role = "ROLE_OWNER";
+            } else if ("Driver".equalsIgnoreCase(role)) {
+                role = "ROLE_DRIVER";
+            }
+        }
+        newUser.setRole(role);
+        
+        // Auto-approve owners ONLY if there are no active owners in the database
+        if ("ROLE_OWNER".equals(role)) {
+            long activeOwnerCount = userRepository.countByRoleAndApproved("ROLE_OWNER", true);
+            if (activeOwnerCount == 0) {
+                newUser.setApproved(true);
+            } else {
+                newUser.setApproved(false);
+            }
+        } else {
+            newUser.setApproved(false);
+        }
+        
+        return userRepository.save(newUser);
+    }
+
+    public List<User> getPendingUsers() {
+        return userRepository.findByApproved(false);
+    }
+
+    public void approveUser(String userId) {
+        User user = getUserById(userId);
+        user.setApproved(true);
+        userRepository.save(user);
+    }
+
+    public void rejectUser(String userId) {
+        deleteUser(userId);
     }
 
     public User getUserByUsername(String username) {

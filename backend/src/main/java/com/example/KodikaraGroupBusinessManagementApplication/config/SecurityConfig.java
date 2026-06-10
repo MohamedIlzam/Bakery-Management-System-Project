@@ -65,6 +65,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/fair-delivery-reports/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
                         .requestMatchers("/api/shop-supply-reports/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
                         // Owner Only Manage Data
+                        .requestMatchers("/api/salesman/pending/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
                         .requestMatchers("/api/users/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/drivers/**")
                         .hasAnyAuthority("ROLE_SALESMAN", "ROLE_OWNER", "ADMIN")

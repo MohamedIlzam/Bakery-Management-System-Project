@@ -40,6 +40,27 @@ public class UserController {
         return new ResponseEntity<>(createdSalesman, HttpStatus.CREATED);
     }
 
+    // Get Pending Approvals
+    @GetMapping("/pending")
+    public ResponseEntity<List<User>> getPendingUsers() {
+        List<User> pending = userService.getPendingUsers();
+        return new ResponseEntity<>(pending, HttpStatus.OK);
+    }
+
+    // Approve User
+    @PostMapping("/pending/{id}/approve")
+    public ResponseEntity<MessageResponse> approveUser(@PathVariable String id) {
+        userService.approveUser(id);
+        return ResponseEntity.ok(new MessageResponse("User approved successfully"));
+    }
+
+    // Reject User
+    @PostMapping("/pending/{id}/reject")
+    public ResponseEntity<MessageResponse> rejectUser(@PathVariable String id) {
+        userService.rejectUser(id);
+        return ResponseEntity.ok(new MessageResponse("User rejected/deleted successfully"));
+    }
+
     // Get All Users
     @GetMapping("/all")
     public ResponseEntity<List<User>> getAllSalesmen() { // Renamed from getAllSalesmen

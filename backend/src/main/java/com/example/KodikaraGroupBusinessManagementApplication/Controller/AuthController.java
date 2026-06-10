@@ -96,6 +96,12 @@ public class AuthController {
                     )
             );
 
+            // Fetch user entity to verify approval status
+            User user = userService.getUserByUsername(loginRequest.getUsername());
+            if (!user.isApproved()) {
+                return new ResponseEntity<>("Your account is pending approval by the Owner.", HttpStatus.FORBIDDEN);
+            }
+
             // Create a new Security Context
             SecurityContext context = SecurityContextHolder.createEmptyContext();
             context.setAuthentication(authentication);
@@ -119,9 +125,9 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
-        User createdUser = userService.createSalesman(userDTO);
+        User createdUser = userService.registerUser(userDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new MessageResponse("Account created for " + createdUser.getUsername() + " with role " + createdUser.getRole()));
+                .body(new MessageResponse("Account created for " + createdUser.getUsername() + " (pending owner approval)"));
     }
 
     @PostMapping("/forgot-password")

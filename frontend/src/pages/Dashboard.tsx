@@ -1,13 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck, Store, FileText, LogOut, Croissant, Plus, User } from "lucide-react";
+import { Truck, Store, FileText, LogOut, Croissant, Plus, User, Bell, Check, X, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { authService } from "@/services/auth.service";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { isAuthenticated, userRole, username, logout, loading } = useAuth();
+  const { toast } = useToast();
+
+  const [pendingUsers, setPendingUsers] = useState<any[]>([]);
+  const [openNotifications, setOpenNotifications] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -15,6 +22,58 @@ const Dashboard = () => {
       navigate("/login");
     }
   }, [isAuthenticated, loading, navigate]);
+
+  const loadPendingUsers = async () => {
+    if (['ROLE_OWNER', 'ADMIN'].includes(userRole || '')) {
+      try {
+        const users = await authService.getPendingUsers();
+        setPendingUsers(users);
+      } catch (error) {
+        console.error("Failed to load pending users:", error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadPendingUsers();
+    }
+  }, [userRole, isAuthenticated]);
+
+  const handleApprove = async (userId: string) => {
+    try {
+      await authService.approveUser(userId);
+      toast({
+        title: "Approved",
+        description: "User registered successfully",
+      });
+      loadPendingUsers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to approve user",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReject = async (userId: string) => {
+    if (!confirm("Are you sure you want to reject this registration request?")) return;
+    try {
+      await authService.rejectUser(userId);
+      toast({
+        title: "Rejected",
+        description: "User registration request has been deleted",
+      });
+      loadPendingUsers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to reject user",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -78,6 +137,73 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center space-x-2">
+            {['ROLE_OWNER', 'ADMIN'].includes(userRole || '') && (
+              <Popover open={openNotifications} onOpenChange={setOpenNotifications}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon" className="relative mr-1">
+                    <Bell className="h-4 w-4 text-bakery-brown" />
+                    {pendingUsers.length > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse">
+                        {pendingUsers.length}
+                      </span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4" align="end">
+                  <div className="grid gap-4">
+                    <div className="space-y-1">
+                      <h4 className="font-semibold text-bakery-brown leading-none">Registration Approvals</h4>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {pendingUsers.length === 0
+                          ? "No pending registrations"
+                          : `You have ${pendingUsers.length} pending registration request(s)`}
+                      </p>
+                    </div>
+                    {pendingUsers.length > 0 && (
+                      <div className="grid gap-3 max-h-[300px] overflow-y-auto mt-2">
+                        {pendingUsers.map((p) => (
+                          <div
+                            key={p.userId}
+                            className="flex items-center justify-between border-b border-border pb-2 last:border-0 last:pb-0"
+                          >
+                            <div className="space-y-1 pr-2">
+                              <p className="text-sm font-semibold leading-none text-bakery-brown">
+                                {p.username}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Role: {p.role ? p.role.replace(/^ROLE_/, "") : "SALESMAN"}
+                              </p>
+                            </div>
+                            <div className="flex gap-1 shrink-0 items-center">
+                              {p.role === 'ROLE_OWNER' && (
+                                <AlertTriangle className="h-4 w-4 text-destructive mr-1 animate-pulse" title="Warning: Granting OWNER permissions" />
+                              )}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                onClick={() => handleApprove(p.userId)}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                onClick={() => handleReject(p.userId)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+
             <Button 
               variant="outline" 
               onClick={() => navigate("/profile")}
