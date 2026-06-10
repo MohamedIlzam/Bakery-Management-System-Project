@@ -14,7 +14,7 @@ public class Vehicle {
     @Column(name = "vehicle_no", length = 20, nullable = false, unique = true)
     private String vehicleNo;
 
-    @Column(name = "driver_name", length = 100, nullable = false)
+    @Column(name = "driver_name", length = 100)
     private String driverName;
 
     @Column(name = "vehicle_type", length = 50)
@@ -41,6 +41,9 @@ public class Vehicle {
     }
     public String getDriverName() {
         return driverName;
+    }
+    public String getVehicleType() {
+        return vehicleType;
     }
 
     public String getId() {
