@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck, Store, FileText, LogOut, Croissant, Plus } from "lucide-react";
+import { Truck, Store, FileText, LogOut, Croissant, Plus, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Dashboard = () => {
@@ -77,14 +77,24 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">Welcome, {username} </p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="flex items-center space-x-2"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Logout</span>
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/profile")}
+              className="flex items-center space-x-2"
+            >
+              <User className="h-4 w-4" />
+              <span>Profile</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleLogout}
+              className="flex items-center space-x-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </Button>
+          </div>
         </div>
       </header>
 
