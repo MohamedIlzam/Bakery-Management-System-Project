@@ -82,6 +82,16 @@ const Login = () => {
                 required
                 disabled={isLoading}
               />
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-xs text-primary hover:underline"
+                  disabled={isLoading}
+                >
+                  Forgot Password?
+                </button>
+              </div>
             </div>
             <Button
               type="submit" 

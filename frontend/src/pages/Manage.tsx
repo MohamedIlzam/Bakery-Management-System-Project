@@ -32,7 +32,7 @@ const categories = [
 const Manage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { userRole, loading } = useAuth();
+  const { userRole, loading, username } = useAuth();
 
   // Products State
   const [products, setProducts] = useState<ProductDTO[]>([]);
@@ -862,7 +862,7 @@ const Manage = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Users List ({salesmen.length})</CardTitle>
+                  <CardTitle>Users List ({(salesmen || []).filter((s) => s.username !== username).length})</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {isLoadingSalesmen ? (
@@ -870,7 +870,7 @@ const Manage = () => {
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
                       <p className="text-muted-foreground mt-2">Loading users...</p>
                     </div>
-                  ) : salesmen.length === 0 ? (
+                  ) : (salesmen || []).filter((s) => s.username !== username).length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">No users added yet</p>
                   ) : (
                     <div className="overflow-auto max-h-[500px]">
@@ -884,33 +884,35 @@ const Manage = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {salesmen.map((salesman) => (
-                            <TableRow key={salesman.userId}>
-                              <TableCell>{salesman.username}</TableCell>
-                              <TableCell>{salesman.userId}</TableCell>
-                              <TableCell>{formatRole(salesman.role)}</TableCell>
-                              <TableCell>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleEditSalesman(salesman)}
-                                    disabled={isLoadingSalesmen}
-                                  >
-                                    <Edit2 className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleDeleteSalesman(salesman.userId!)}
-                                    disabled={isLoadingSalesmen}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                          {(salesmen || [])
+                            .filter((s) => s.username !== username)
+                            .map((salesman) => (
+                              <TableRow key={salesman.userId}>
+                                <TableCell>{salesman.username}</TableCell>
+                                <TableCell>{salesman.userId}</TableCell>
+                                <TableCell>{formatRole(salesman.role)}</TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleEditSalesman(salesman)}
+                                      disabled={isLoadingSalesmen}
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleDeleteSalesman(salesman.userId!)}
+                                      disabled={isLoadingSalesmen}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
                         </TableBody>
                       </Table>
                     </div>
