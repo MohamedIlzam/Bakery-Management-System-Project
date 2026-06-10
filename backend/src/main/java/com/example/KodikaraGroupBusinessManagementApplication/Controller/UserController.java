@@ -65,17 +65,71 @@ public class UserController {
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
-    // Get One User by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getSalesmanById(@PathVariable String id) {
-        User user = userService.getUserById(id);
+    // Get Logged-in User Profile
+    @GetMapping("/profile")
+    public ResponseEntity<User> getProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        User user = userService.getUserByUsername(currentUsername);
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
+
+    // Update Logged-in User Profile
+    @PutMapping("/profile")
+    public ResponseEntity<User> updateProfile(@Valid @RequestBody UserUpdateDTO profileDTO) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        User updatedUser = userService.updateProfile(currentUsername, profileDTO);
+        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+    }
+
+    // Send Verification Code for Email Update
+    @PostMapping("/profile/email/send-code")
+    public ResponseEntity<MessageResponse> sendEmailUpdateCode(@RequestBody java.util.Map<String, String> request) {
+        String newEmail = request.get("email");
+        if (newEmail == null || newEmail.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Email is required"));
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        try {
+            userService.sendEmailUpdateCode(currentUsername, newEmail);
+            return ResponseEntity.ok(new MessageResponse("Verification code sent successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    // Verify Code and Update Recovery Email
+    @PostMapping("/profile/email/verify-code")
+    public ResponseEntity<MessageResponse> verifyEmailUpdateCode(@RequestBody java.util.Map<String, String> request) {
+        String newEmail = request.get("email");
+        String code = request.get("code");
+        if (newEmail == null || code == null || newEmail.trim().isEmpty() || code.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Email and code are required"));
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        try {
+            userService.updateRecoveryEmail(currentUsername, newEmail, code);
+            return ResponseEntity.ok(new MessageResponse("Recovery email updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(e.getMessage()));
+        }
+    }
+
     // Get Users For Dropdown List
     @GetMapping("/lookup")
     public ResponseEntity<List<User>> getSalesmanLookup(){
         List<User> salesman = userService.getUsersByRole("DATAENTRY");
         return new ResponseEntity<>(salesman, HttpStatus.OK);
+    }
+
+    // Get One User by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getSalesmanById(@PathVariable String id) {
+        User user = userService.getUserById(id);
+        return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
     // Update a User
