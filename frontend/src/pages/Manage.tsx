@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { productService, ProductDTO } from "@/services/product.service";
 import { shopService, ShopDTO } from "@/services/shop.service";
 import { salesmanService, SalesmanDTO } from "@/services/salesman.service";
+import { driverService, DriverDTO } from "@/services/driver.service";
+import { vehicleService, VehicleDTO } from "@/services/vehicle.service";
 import { useAuth } from "@/contexts/AuthContext";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -110,6 +112,48 @@ const Manage = () => {
     return cleanRole.charAt(0).toUpperCase() + cleanRole.slice(1).toLowerCase();
   };
 
+  // Drivers State
+  const [drivers, setDrivers] = useState<DriverDTO[]>([]);
+  const [driverName, setDriverName] = useState("");
+  const [driverContact, setDriverContact] = useState("");
+  const [editingDriverId, setEditingDriverId] = useState<string | null>(null);
+  const [isLoadingDrivers, setIsLoadingDrivers] = useState(false);
+  const [driverSearchQuery, setDriverSearchQuery] = useState("");
+  const [driverSearchField, setDriverSearchField] = useState("name");
+
+  const filteredDrivers = drivers.filter((d) => {
+    if (!driverSearchQuery.trim()) return true;
+    const query = driverSearchQuery.toLowerCase().trim();
+    if (driverSearchField === "name") {
+      return d.name.toLowerCase().includes(query);
+    }
+    if (driverSearchField === "contact") {
+      return (d.contact || "").toLowerCase().includes(query);
+    }
+    return true;
+  });
+
+  // Vehicles State
+  const [vehicles, setVehicles] = useState<VehicleDTO[]>([]);
+  const [vehicleNo, setVehicleNo] = useState("");
+  const [vehicleType, setVehicleType] = useState("Van");
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+  const [vehicleSearchQuery, setVehicleSearchQuery] = useState("");
+  const [vehicleSearchField, setVehicleSearchField] = useState("no");
+
+  const filteredVehicles = vehicles.filter((v) => {
+    if (!vehicleSearchQuery.trim()) return true;
+    const query = vehicleSearchQuery.toLowerCase().trim();
+    if (vehicleSearchField === "no") {
+      return v.vehicleNo.toLowerCase().includes(query);
+    }
+    if (vehicleSearchField === "type") {
+      return (v.vehicleType || "").toLowerCase().includes(query);
+    }
+    return true;
+  });
+
   // Load data on mount
   useEffect(() => {
     if (!loading && !['ROLE_OWNER', 'ADMIN'].includes(userRole || '')) {
@@ -120,6 +164,8 @@ const Manage = () => {
       loadProducts();
       loadShops();
       loadSalesmen();
+      loadDrivers();
+      loadVehicles();
     }
   }, [loading, userRole, navigate]);
 
@@ -425,6 +471,183 @@ const Manage = () => {
     }
   };
 
+  // ===== DRIVER FUNCTIONS =====
+  const loadDrivers = async () => {
+    setIsLoadingDrivers(true);
+    try {
+      const data = await driverService.list();
+      setDrivers(data);
+    } catch (error: any) {
+      toast({
+        title: "Error Loading Drivers",
+        description: error.response?.data?.message || "Failed to load drivers",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDrivers(false);
+    }
+  };
+
+  const handleSaveDriver = async () => {
+    if (!driverName.trim()) {
+      toast({
+        title: "Error",
+        description: "Driver name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (driverContact.trim()) {
+      const contactRegex = /^\d{9,10}$/;
+      if (!contactRegex.test(driverContact.trim())) {
+        toast({
+          title: "Error",
+          description: "Contact number must be exactly 9 or 10 digits",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setIsLoadingDrivers(true);
+    try {
+      const payload = {
+        name: driverName.trim(),
+        contact: driverContact.trim() || undefined,
+      };
+
+      if (editingDriverId) {
+        await driverService.update(editingDriverId, payload);
+        toast({ title: "Success", description: "Driver updated successfully" });
+      } else {
+        await driverService.create(payload);
+        toast({ title: "Success", description: "Driver added successfully" });
+      }
+
+      await loadDrivers();
+      setDriverName("");
+      setDriverContact("");
+      setEditingDriverId(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to save driver",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDrivers(false);
+    }
+  };
+
+  const handleEditDriver = (driver: DriverDTO) => {
+    setDriverName(driver.name);
+    setDriverContact(driver.contact || "");
+    setEditingDriverId(driver.driverId);
+  };
+
+  const handleDeleteDriver = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this driver?")) return;
+
+    setIsLoadingDrivers(true);
+    try {
+      await driverService.delete(id);
+      toast({ title: "Success", description: "Driver deleted successfully" });
+      await loadDrivers();
+      await loadVehicles();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to delete driver",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDrivers(false);
+    }
+  };
+
+  // ===== VEHICLE FUNCTIONS =====
+  const loadVehicles = async () => {
+    setIsLoadingVehicles(true);
+    try {
+      const data = await vehicleService.list();
+      setVehicles(data);
+    } catch (error: any) {
+      toast({
+        title: "Error Loading Vehicles",
+        description: error.response?.data?.message || "Failed to load vehicles",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingVehicles(false);
+    }
+  };
+
+  const handleSaveVehicle = async () => {
+    if (!vehicleNo.trim() || !vehicleType.trim()) {
+      toast({
+        title: "Error",
+        description: "Vehicle number and type are required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoadingVehicles(true);
+    try {
+      const payload = {
+        vehicleNo: vehicleNo.trim(),
+        vehicleType: vehicleType,
+      };
+
+      if (editingVehicleId) {
+        await vehicleService.update(editingVehicleId, payload);
+        toast({ title: "Success", description: "Vehicle updated successfully" });
+      } else {
+        await vehicleService.create(payload);
+        toast({ title: "Success", description: "Vehicle added successfully" });
+      }
+
+      await loadVehicles();
+      setVehicleNo("");
+      setVehicleType("Van");
+      setEditingVehicleId(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to save vehicle",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingVehicles(false);
+    }
+  };
+
+  const handleEditVehicle = (vehicle: VehicleDTO) => {
+    setVehicleNo(vehicle.vehicleNo);
+    setVehicleType(vehicle.vehicleType || "Van");
+    setEditingVehicleId(vehicle.vehicleId || null);
+  };
+
+  const handleDeleteVehicle = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this vehicle?")) return;
+
+    setIsLoadingVehicles(true);
+    try {
+      await vehicleService.delete(id);
+      toast({ title: "Success", description: "Vehicle deleted successfully" });
+      await loadVehicles();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to delete vehicle",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingVehicles(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-bakery-cream to-bakery-warm p-4">
       <div className="max-w-7xl mx-auto">
@@ -445,10 +668,12 @@ const Manage = () => {
         </div>
 
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="shops">Shops</TabsTrigger>
             <TabsTrigger value="salesmen">Users</TabsTrigger>
+            <TabsTrigger value="drivers">Drivers</TabsTrigger>
+            <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
           </TabsList>
 
           {/* Products Tab */}
@@ -913,6 +1138,267 @@ const Manage = () => {
                                 </TableCell>
                               </TableRow>
                             ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Drivers Tab */}
+          <TabsContent value="drivers">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{editingDriverId ? "Edit Driver" : "Add New Driver"}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="driverName">Driver Name *</Label>
+                    <Input
+                      id="driverName"
+                      value={driverName}
+                      onChange={(e) => setDriverName(e.target.value)}
+                      placeholder="Driver name"
+                      disabled={isLoadingDrivers}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="driverContact">Contact Number</Label>
+                    <Input
+                      id="driverContact"
+                      value={driverContact}
+                      onChange={(e) => setDriverContact(e.target.value)}
+                      placeholder="Contact number (e.g. 0771234567)"
+                      disabled={isLoadingDrivers}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveDriver} className="flex-1" disabled={isLoadingDrivers}>
+                      {isLoadingDrivers && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {editingDriverId ? "Update" : "Add"} Driver
+                    </Button>
+                    {editingDriverId && (
+                      <Button
+                        onClick={() => {
+                          setDriverName("");
+                          setDriverContact("");
+                          setEditingDriverId(null);
+                        }}
+                        variant="outline"
+                        disabled={isLoadingDrivers}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pb-4">
+                  <CardTitle className="text-xl font-bold">Drivers List ({filteredDrivers.length})</CardTitle>
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
+                    <Input
+                      placeholder="Search..."
+                      value={driverSearchQuery}
+                      onChange={(e) => setDriverSearchQuery(e.target.value)}
+                      className="h-9 w-full sm:w-[200px]"
+                    />
+                    <Select value={driverSearchField} onValueChange={setDriverSearchField}>
+                      <SelectTrigger className="h-9 w-[110px]">
+                        <SelectValue placeholder="Search by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name">Name</SelectItem>
+                        <SelectItem value="contact">Contact</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingDrivers ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                      <p className="text-muted-foreground mt-2">Loading drivers...</p>
+                    </div>
+                  ) : drivers.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No drivers added yet</p>
+                  ) : (
+                    <div className="overflow-auto max-h-[500px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Driver ID</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Contact</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredDrivers.map((driver) => (
+                            <TableRow key={driver.driverId}>
+                              <TableCell>{driver.driverId}</TableCell>
+                              <TableCell>{driver.name}</TableCell>
+                              <TableCell>{driver.contact || "-"}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEditDriver(driver)}
+                                    disabled={isLoadingDrivers}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteDriver(driver.driverId!)}
+                                    disabled={isLoadingDrivers}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Vehicles Tab */}
+          <TabsContent value="vehicles">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{editingVehicleId ? "Edit Vehicle" : "Add New Vehicle"}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="vehicleNo">Vehicle Number *</Label>
+                    <Input
+                      id="vehicleNo"
+                      value={vehicleNo}
+                      onChange={(e) => setVehicleNo(e.target.value)}
+                      placeholder="e.g. WP WP-1234 or WP-PC-1234"
+                      disabled={isLoadingVehicles}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vehicleType">Vehicle Type *</Label>
+                    <Select
+                      value={vehicleType}
+                      onValueChange={setVehicleType}
+                      disabled={isLoadingVehicles}
+                    >
+                      <SelectTrigger id="vehicleType">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Three-Wheel">Three-Wheel</SelectItem>
+                        <SelectItem value="Lorry">Lorry</SelectItem>
+                        <SelectItem value="Van">Van</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveVehicle} className="flex-1" disabled={isLoadingVehicles}>
+                      {isLoadingVehicles && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {editingVehicleId ? "Update" : "Add"} Vehicle
+                    </Button>
+                    {editingVehicleId && (
+                      <Button
+                        onClick={() => {
+                          setVehicleNo("");
+                          setVehicleType("Van");
+                          setEditingVehicleId(null);
+                        }}
+                        variant="outline"
+                        disabled={isLoadingVehicles}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0 pb-4">
+                  <CardTitle className="text-xl font-bold">Vehicles List ({filteredVehicles.length})</CardTitle>
+                  <div className="flex items-center space-x-2 w-full sm:w-auto">
+                    <Input
+                      placeholder="Search..."
+                      value={vehicleSearchQuery}
+                      onChange={(e) => setVehicleSearchQuery(e.target.value)}
+                      className="h-9 w-full sm:w-[200px]"
+                    />
+                    <Select value={vehicleSearchField} onValueChange={setVehicleSearchField}>
+                      <SelectTrigger className="h-9 w-[110px]">
+                        <SelectValue placeholder="Search by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no">Vehicle No</SelectItem>
+                        <SelectItem value="type">Type</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingVehicles ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                      <p className="text-muted-foreground mt-2">Loading vehicles...</p>
+                    </div>
+                  ) : vehicles.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No vehicles added yet</p>
+                  ) : (
+                    <div className="overflow-auto max-h-[500px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Vehicle ID</TableHead>
+                            <TableHead>Vehicle No</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredVehicles.map((vehicle) => (
+                            <TableRow key={vehicle.vehicleId}>
+                              <TableCell>{vehicle.vehicleId}</TableCell>
+                              <TableCell>{vehicle.vehicleNo}</TableCell>
+                              <TableCell>{vehicle.vehicleType || "-"}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEditVehicle(vehicle)}
+                                    disabled={isLoadingVehicles}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteVehicle(vehicle.vehicleId!)}
+                                    disabled={isLoadingVehicles}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
                         </TableBody>
                       </Table>
                     </div>

@@ -18,4 +18,18 @@ export const vehicleService = {
     const response = await apiClient.get<VehicleDTO>(`/vehicles/${id}`);
     return response.data;
   },
+
+  create: async (payload: Omit<VehicleDTO, 'vehicleId'>): Promise<VehicleDTO> => {
+    const response = await apiClient.post<VehicleDTO>('/vehicles', payload);
+    return response.data;
+  },
+
+  update: async (id: string, payload: Omit<VehicleDTO, 'vehicleId'>): Promise<VehicleDTO> => {
+    const response = await apiClient.put<VehicleDTO>(`/vehicles/${id}`, payload);
+    return response.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await apiClient.delete(`/vehicles/${id}`);
+  },
 };

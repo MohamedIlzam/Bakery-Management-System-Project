@@ -30,6 +30,9 @@ public class User {
     @Column(name = "code_expiry_time")
     private java.time.LocalDateTime codeExpiryTime;
 
+    @Column(name = "approved", nullable = false)
+    private boolean approved = true;
+
 
     public String getUserId() {
         return userId;
@@ -85,5 +88,13 @@ public class User {
 
     public void setCodeExpiryTime(java.time.LocalDateTime codeExpiryTime) {
         this.codeExpiryTime = codeExpiryTime;
+    }
+
+    public boolean isApproved() {
+        return approved;
+    }
+
+    public void setApproved(boolean approved) {
+        this.approved = approved;
     }
 }

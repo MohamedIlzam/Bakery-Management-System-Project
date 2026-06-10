@@ -13,6 +13,8 @@ public class Driver {
     private String driverId;
     @Column(name = "dname",nullable = false)
     private String name;
+    @Column(name = "contact", length = 15)
+    private String contact;
 
     public void setId(String driverId) {
         this.driverId = driverId;
@@ -20,11 +22,17 @@ public class Driver {
     public void setName(String name) {
         this.name = name;
     }
+    public void setContact(String contact) {
+        this.contact = contact;
+    }
     public String getDriverId() {
         return driverId;
     }
     public String getName() {
         return name;
+    }
+    public String getContact() {
+        return contact;
     }
 }
 

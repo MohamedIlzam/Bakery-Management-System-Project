@@ -74,5 +74,20 @@ export const authService = {
     const response = await apiClient.post('/salesman/profile/email/verify-code', { email, code });
     return response.data;
   },
+
+  getPendingUsers: async (): Promise<any[]> => {
+    const response = await apiClient.get('/salesman/pending');
+    return response.data;
+  },
+
+  approveUser: async (userId: string): Promise<any> => {
+    const response = await apiClient.post(`/salesman/pending/${userId}/approve`);
+    return response.data;
+  },
+
+  rejectUser: async (userId: string): Promise<any> => {
+    const response = await apiClient.post(`/salesman/pending/${userId}/reject`);
+    return response.data;
+  },
 };
 
