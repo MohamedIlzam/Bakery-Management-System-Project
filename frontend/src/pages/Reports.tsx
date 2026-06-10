@@ -229,9 +229,15 @@ const Reports = () => {
       let details: FairDeliveryDTO[] = [];
 
       if (report.reportType === 'DAILY' && dateOrMonth) {
-        details = allDeliveries.filter(d => d.deliveryDate === dateOrMonth);
+        details = allDeliveries.filter(d => 
+          d.deliveryDate === dateOrMonth && 
+          ['RETURNED', 'RETURN', 'COMPLETED'].includes((d.status || '').toUpperCase())
+        );
       } else if (report.reportType === 'MONTHLY' && dateOrMonth) {
-        details = allDeliveries.filter(d => d.deliveryDate?.startsWith(dateOrMonth));
+        details = allDeliveries.filter(d => 
+          d.deliveryDate?.startsWith(dateOrMonth) && 
+          ['RETURNED', 'RETURN', 'COMPLETED'].includes((d.status || '').toUpperCase())
+        );
       }
 
       setFairDeliveriesDetail(details);
