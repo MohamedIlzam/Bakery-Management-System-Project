@@ -137,7 +137,6 @@ const Manage = () => {
   const [vehicles, setVehicles] = useState<VehicleDTO[]>([]);
   const [vehicleNo, setVehicleNo] = useState("");
   const [vehicleType, setVehicleType] = useState("Van");
-  const [vehicleDriverName, setVehicleDriverName] = useState("Unassigned");
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
   const [vehicleSearchQuery, setVehicleSearchQuery] = useState("");
@@ -151,9 +150,6 @@ const Manage = () => {
     }
     if (vehicleSearchField === "type") {
       return (v.vehicleType || "").toLowerCase().includes(query);
-    }
-    if (vehicleSearchField === "driver") {
-      return (v.driverName || "").toLowerCase().includes(query);
     }
     return true;
   });
@@ -602,7 +598,6 @@ const Manage = () => {
       const payload = {
         vehicleNo: vehicleNo.trim(),
         vehicleType: vehicleType,
-        driverName: vehicleDriverName === "Unassigned" || !vehicleDriverName ? undefined : vehicleDriverName,
       };
 
       if (editingVehicleId) {
@@ -616,7 +611,6 @@ const Manage = () => {
       await loadVehicles();
       setVehicleNo("");
       setVehicleType("Van");
-      setVehicleDriverName("Unassigned");
       setEditingVehicleId(null);
     } catch (error: any) {
       toast({
@@ -632,7 +626,6 @@ const Manage = () => {
   const handleEditVehicle = (vehicle: VehicleDTO) => {
     setVehicleNo(vehicle.vehicleNo);
     setVehicleType(vehicle.vehicleType || "Van");
-    setVehicleDriverName(vehicle.driverName || "Unassigned");
     setEditingVehicleId(vehicle.vehicleId || null);
   };
 
@@ -1316,26 +1309,6 @@ const Manage = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label htmlFor="vehicleDriverName">Assigned Driver</Label>
-                    <Select
-                      value={vehicleDriverName}
-                      onValueChange={setVehicleDriverName}
-                      disabled={isLoadingVehicles}
-                    >
-                      <SelectTrigger id="vehicleDriverName">
-                        <SelectValue placeholder="Select driver" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Unassigned">Unassigned (None)</SelectItem>
-                        {drivers.map((d) => (
-                          <SelectItem key={d.driverId} value={d.name}>
-                            {d.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <div className="flex gap-2">
                     <Button onClick={handleSaveVehicle} className="flex-1" disabled={isLoadingVehicles}>
                       {isLoadingVehicles && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -1346,7 +1319,6 @@ const Manage = () => {
                         onClick={() => {
                           setVehicleNo("");
                           setVehicleType("Van");
-                          setVehicleDriverName("Unassigned");
                           setEditingVehicleId(null);
                         }}
                         variant="outline"
@@ -1376,7 +1348,6 @@ const Manage = () => {
                       <SelectContent>
                         <SelectItem value="no">Vehicle No</SelectItem>
                         <SelectItem value="type">Type</SelectItem>
-                        <SelectItem value="driver">Driver</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1397,7 +1368,6 @@ const Manage = () => {
                             <TableHead>Vehicle ID</TableHead>
                             <TableHead>Vehicle No</TableHead>
                             <TableHead>Type</TableHead>
-                            <TableHead>Driver</TableHead>
                             <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -1407,7 +1377,6 @@ const Manage = () => {
                               <TableCell>{vehicle.vehicleId}</TableCell>
                               <TableCell>{vehicle.vehicleNo}</TableCell>
                               <TableCell>{vehicle.vehicleType || "-"}</TableCell>
-                              <TableCell>{vehicle.driverName || "Unassigned"}</TableCell>
                               <TableCell>
                                 <div className="flex gap-2">
                                   <Button

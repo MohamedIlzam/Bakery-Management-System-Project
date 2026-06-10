@@ -30,9 +30,6 @@ public class VehicleService {
         vehicle.setVehicleId(IdGenerator.vehicleId());
         vehicle.setVehicleNo(vehicle.getVehicleNo().trim());
         vehicle.setVehicleType(standardizeVehicleType(vehicle.getVehicleType()));
-        if (vehicle.getDriverName() != null) {
-            vehicle.setDriverName(vehicle.getDriverName().trim());
-        }
         return vehicleRepository.save(vehicle);
     }
 
@@ -54,12 +51,6 @@ public class VehicleService {
 
         vehicle.setVehicleNo(newNo);
         vehicle.setVehicleType(standardizeVehicleType(vehicleDetails.getVehicleType()));
-        
-        if (vehicleDetails.getDriverName() != null && !vehicleDetails.getDriverName().trim().isEmpty()) {
-            vehicle.setDriverName(vehicleDetails.getDriverName().trim());
-        } else {
-            vehicle.setDriverName(null);
-        }
         
         return vehicleRepository.save(vehicle);
     }
