@@ -5,10 +5,11 @@ export interface SalesmanDTO {
   username: string;
   role: string; // e.g., ROLE_SALESMAN, ROLE_DRIVER
   password?: string;
+  recoveryEmail?: string;
 }
 
 export const salesmanService = {
-  create: async (salesman: { username: string; role: string; password?: string }): Promise<SalesmanDTO> => {
+  create: async (salesman: { username: string; role: string; password?: string; recoveryEmail: string }): Promise<SalesmanDTO> => {
     const response = await apiClient.post<SalesmanDTO>('/salesman/create', salesman);
     return response.data;
   },

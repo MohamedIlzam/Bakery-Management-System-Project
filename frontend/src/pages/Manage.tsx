@@ -100,6 +100,7 @@ const Manage = () => {
   const [salesmanUsername, setSalesmanUsername] = useState("");
   const [salesmanRole, setSalesmanRole] = useState("Salesman");
   const [salesmanPassword, setSalesmanPassword] = useState("");
+  const [salesmanRecoveryEmail, setSalesmanRecoveryEmail] = useState("");
   const [editingSalesmanId, setEditingSalesmanId] = useState<string | null>(null);
   const [isLoadingSalesmen, setIsLoadingSalesmen] = useState(false);
 
@@ -396,6 +397,17 @@ const Manage = () => {
       toast({ title: "Error", description: "Password must be at least 6 characters", variant: "destructive" });
       return;
     }
+    if (!editingSalesmanId && !salesmanRecoveryEmail.trim()) {
+      toast({ title: "Error", description: "Recovery email is required", variant: "destructive" });
+      return;
+    }
+    if (!editingSalesmanId && salesmanRecoveryEmail.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(salesmanRecoveryEmail.trim())) {
+        toast({ title: "Error", description: "Invalid email format", variant: "destructive" });
+        return;
+      }
+    }
     if (!salesmanRole.trim()) {
       toast({
         title: "Error",
@@ -419,6 +431,7 @@ const Manage = () => {
           username: salesmanUsername,
           role: salesmanRole,
           password: salesmanPassword,
+          recoveryEmail: salesmanRecoveryEmail,
         });
         toast({ title: "Success", description: "User added successfully" });
       }
@@ -426,6 +439,7 @@ const Manage = () => {
       await loadSalesmen();
       setSalesmanUsername("");
       setSalesmanPassword("");
+      setSalesmanRecoveryEmail("");
       setSalesmanRole("Salesman");
       setEditingSalesmanId(null);
     } catch (error: any) {
@@ -1042,6 +1056,19 @@ const Manage = () => {
                       disabled={isLoadingSalesmen}
                     />
                   </div>
+                  {!editingSalesmanId && (
+                    <div>
+                      <Label htmlFor="salesmanRecoveryEmail">Recovery Email *</Label>
+                      <Input
+                        id="salesmanRecoveryEmail"
+                        type="email"
+                        value={salesmanRecoveryEmail}
+                        onChange={(e) => setSalesmanRecoveryEmail(e.target.value)}
+                        placeholder="e.g. recovery@example.com"
+                        disabled={isLoadingSalesmen}
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label htmlFor="salesmanRole">Role *</Label>
                     <Select
@@ -1073,6 +1100,7 @@ const Manage = () => {
                           setSalesmanUsername("");
                           setSalesmanRole("Salesman");
                           setSalesmanPassword("");
+                          setSalesmanRecoveryEmail("");
                           setEditingSalesmanId(null);
                         }}
                         variant="outline"

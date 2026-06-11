@@ -9,6 +9,7 @@ export interface LoginResponse {
   success: boolean;
   role: string;
   message: string;
+  userId?: string;
 }
 
 export interface RegisterRequest {

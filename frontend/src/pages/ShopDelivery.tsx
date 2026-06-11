@@ -315,6 +315,7 @@ import { productService, ProductDTO } from "@/services/product.service";
 import { shopService, ShopDTO } from "@/services/shop.service";
 import { driverService, DriverDTO } from "@/services/driver.service";
 import { vehicleService, VehicleDTO } from "@/services/vehicle.service";
+import { useAuth } from "@/contexts/AuthContext";
 import { printBill } from "@/utils/printBill"; 
 
 interface ProductItem {
@@ -331,13 +332,8 @@ const ShopDelivery = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const getCurrentUser = () => {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : { userId: "USR001", role: "OWNER" }; 
-  };
-  
-  const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.role === 'OWNER';
+  const { userId, userRole } = useAuth();
+  const isAdmin = userRole === 'ROLE_OWNER' || userRole === 'OWNER' || userRole === 'ADMIN';
 
   const [shopId, setShopId] = useState("");
   const [driverId, setDriverId] = useState(""); 
@@ -472,7 +468,7 @@ const ShopDelivery = () => {
 
       const requestBody: ShopSupplyRequestDTO = {
         shopId,
-        salesmanId: currentUser.userId,
+        salesmanId: userId || "",
         driverId: driverId,
         vehicleId,
         items,
@@ -546,7 +542,7 @@ const ShopDelivery = () => {
     }
     if (isAdmin) return true;
     const isAssignment = delivery.items.length === 0;
-    const isMyDelivery = delivery.salesmanId === currentUser.userId;
+    const isMyDelivery = delivery.salesmanId === userId;
     return isAssignment || isMyDelivery;
   });
 

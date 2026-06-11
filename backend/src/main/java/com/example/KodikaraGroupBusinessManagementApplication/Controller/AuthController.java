@@ -116,7 +116,7 @@ public class AuthController {
                     .findFirst()
                     .orElse("");
 
-            return ResponseEntity.ok(new LoginResponse(true, role, "Login successful"));
+            return ResponseEntity.ok(new LoginResponse(true, role, "Login successful", user.getUserId()));
 
         } catch (AuthenticationException e) {
             return new ResponseEntity<>("Invalid username or password", HttpStatus.UNAUTHORIZED);
