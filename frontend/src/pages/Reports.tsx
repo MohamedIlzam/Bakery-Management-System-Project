@@ -73,7 +73,7 @@ const Reports = () => {
       const data = await fairDeliveryReportService.list();
       setFairReports(data.sort((a, b) => {
         const dateDiff = new Date(b.freportDate || b.reportMonth || '').getTime() - new Date(a.freportDate || a.reportMonth || '').getTime();
-        return dateDiff !== 0 ? dateDiff : (b.reportId || '').localeCompare(a.reportId || '');
+        return dateDiff !== 0 ? dateDiff : (b.freportID || '').localeCompare(a.freportID || '');
       }));
     } catch (error: any) {
       console.error("Failed to load fair reports:", error);
@@ -229,9 +229,15 @@ const Reports = () => {
       let details: FairDeliveryDTO[] = [];
 
       if (report.reportType === 'DAILY' && dateOrMonth) {
-        details = allDeliveries.filter(d => d.deliveryDate === dateOrMonth);
+        details = allDeliveries.filter(d => 
+          d.deliveryDate === dateOrMonth && 
+          ['RETURNED', 'RETURN', 'COMPLETED'].includes((d.status || '').toUpperCase())
+        );
       } else if (report.reportType === 'MONTHLY' && dateOrMonth) {
-        details = allDeliveries.filter(d => d.deliveryDate?.startsWith(dateOrMonth));
+        details = allDeliveries.filter(d => 
+          d.deliveryDate?.startsWith(dateOrMonth) && 
+          ['RETURNED', 'RETURN', 'COMPLETED'].includes((d.status || '').toUpperCase())
+        );
       }
 
       setFairDeliveriesDetail(details);
@@ -398,7 +404,7 @@ const Reports = () => {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={(e) => { e.stopPropagation(); handleDeleteFairReport(report.reportId); }}
+                                onClick={(e) => { e.stopPropagation(); handleDeleteFairReport(report.freportID); }}
                                 disabled={isLoadingFair}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -542,7 +548,7 @@ const Reports = () => {
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                Report Details: {selectedFairReport?.reportId}
+                Report Details: {selectedFairReport?.freportID}
               </DialogTitle>
               <DialogDescription>
                 {selectedFairReport?.reportType === 'DAILY' ? 'Daily' : 'Monthly'} Report for {selectedFairReport?.reportType === 'DAILY' ? selectedFairReport.freportDate : selectedFairReport?.reportMonth}

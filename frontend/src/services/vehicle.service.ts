@@ -3,7 +3,7 @@ import apiClient from '@/lib/api-client';
 export interface VehicleDTO {
   vehicleId?: string;    // Matches 'vehicle_id' from SQL
   vehicleNo: string;     // Matches 'vehicle_no' from SQL
-  type: string;          // Matches 'type' from SQL (e.g., 'Mini Truck', 'Van')
+  type?: string;          // Matches 'type' from SQL (e.g., 'Mini Truck', 'Van')
   driverName?: string;   // Matches 'driver_name' from SQL
   vehicleType: string;   // Matches 'vehicle_type' from SQL (e.g., 'food_truck', 'shop delivery')
 }

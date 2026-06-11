@@ -6,11 +6,19 @@ public class LoginResponse {
     private boolean success;
     private String role;
     private String message;
+    private String userId;
 
     public LoginResponse(boolean success, String role, String message) {
         this.success = success;
         this.role = role;
         this.message = message;
+    }
+
+    public LoginResponse(boolean success, String role, String message, String userId) {
+        this.success = success;
+        this.role = role;
+        this.message = message;
+        this.userId = userId;
     }
 
     // --- Getters and Setters ---
@@ -37,5 +45,13 @@ public class LoginResponse {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }
