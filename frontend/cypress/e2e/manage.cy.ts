@@ -195,7 +195,7 @@ describe("Manage Dashboard E2E Tests", () => {
     cy.wait("@updateProduct");
 
     // Delete Product
-    cy.stub(window, "confirm").returns(true);
+    cy.on("window:confirm", () => true);
     cy.get("tbody tr").first().find("button").eq(1).click(); // click Delete
     cy.wait("@deleteProduct");
   });
