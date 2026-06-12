@@ -217,7 +217,7 @@ const Dashboard = () => {
             <Button 
               variant="outline" 
               onClick={handleLogout}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors"
             >
               <LogOut className="h-4 w-4" />
               <span>Logout</span>

@@ -76,6 +76,16 @@ export const authService = {
     return response.data;
   },
 
+  sendEmailRemoveCode: async (): Promise<any> => {
+    const response = await apiClient.post('/salesman/profile/email/send-remove-code');
+    return response.data;
+  },
+
+  removeRecoveryEmail: async (code: string): Promise<any> => {
+    const response = await apiClient.post('/salesman/profile/email/remove', { code });
+    return response.data;
+  },
+
   getPendingUsers: async (): Promise<any[]> => {
     const response = await apiClient.get('/salesman/pending');
     return response.data;

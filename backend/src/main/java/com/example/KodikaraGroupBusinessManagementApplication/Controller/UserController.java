@@ -139,6 +139,36 @@ public class UserController {
         }
     }
 
+    // Send Verification Code for Email Removal
+    @PostMapping("/profile/email/send-remove-code")
+    public ResponseEntity<MessageResponse> sendEmailRemoveCode() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        try {
+            userService.sendEmailRemoveCode(currentUsername);
+            return ResponseEntity.ok(new MessageResponse("Verification code sent successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(e.getMessage()));
+        }
+    }
+
+    // Verify Code and Remove Recovery Email
+    @PostMapping("/profile/email/remove")
+    public ResponseEntity<MessageResponse> removeRecoveryEmail(@RequestBody java.util.Map<String, String> request) {
+        String code = request.get("code");
+        if (code == null || code.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Verification code is required"));
+        }
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+        try {
+            userService.removeRecoveryEmail(currentUsername, code);
+            return ResponseEntity.ok(new MessageResponse("Recovery email removed successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse(e.getMessage()));
+        }
+    }
+
     // Get Users For Dropdown List
     @GetMapping("/lookup")
     public ResponseEntity<List<User>> getSalesmanLookup(){

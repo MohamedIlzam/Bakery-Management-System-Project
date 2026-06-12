@@ -71,6 +71,9 @@ public class UserService implements UserDetailsService {
 
     // (Create Salesman)
     public User createSalesman(UserDTO userDTO) {
+        if (userDTO.getPassword() == null || userDTO.getPassword().length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters long");
+        }
         if (userRepository.existsByUsername(userDTO.getUsername())) {
             throw new IllegalArgumentException("Username already registered");
         }
@@ -126,6 +129,9 @@ public class UserService implements UserDetailsService {
         userToUpdate.setUsername(userUpdateDTO.getUsername());
 
         if (userUpdateDTO.getPassword() != null && !userUpdateDTO.getPassword().isEmpty()) {
+            if (userUpdateDTO.getPassword().length() < 6) {
+                throw new IllegalArgumentException("Password must be at least 6 characters long");
+            }
             userToUpdate.setPassword(passwordEncoder.encode(userUpdateDTO.getPassword()));
         }
 
@@ -212,6 +218,9 @@ public class UserService implements UserDetailsService {
     }
 
     public User registerUser(UserDTO userDTO) {
+        if (userDTO.getPassword() == null || userDTO.getPassword().length() < 6) {
+            throw new IllegalArgumentException("Password must be at least 6 characters long");
+        }
         if (userRepository.existsByUsername(userDTO.getUsername())) {
             throw new IllegalArgumentException("Username already registered");
         }
@@ -272,6 +281,10 @@ public class UserService implements UserDetailsService {
     public void sendEmailUpdateCode(String username, String newEmail) {
         User user = getUserByUsername(username);
 
+        if (user.getRecoveryEmail() != null && !user.getRecoveryEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Recovery email is already configured. Please remove it first.");
+        }
+
         // Generate 6 digit code
         String code = String.format("%06d", new java.util.Random().nextInt(999999));
         user.setVerificationCode(code);
@@ -314,6 +327,55 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
     }
 
+    public void sendEmailRemoveCode(String username) {
+        User user = getUserByUsername(username);
+        String existingEmail = user.getRecoveryEmail();
+        if (existingEmail == null || existingEmail.trim().isEmpty()) {
+            throw new IllegalArgumentException("No recovery email configured to remove.");
+        }
+
+        // Generate 6 digit code
+        String code = String.format("%06d", new java.util.Random().nextInt(999999));
+        user.setVerificationCode(code);
+        user.setCodeExpiryTime(java.time.LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        // Print code to console for easy local verification
+        System.out.println("=================================================");
+        System.out.println("EMAIL REMOVAL VERIFICATION CODE FOR " + user.getUsername() + ": " + code);
+        System.out.println("=================================================");
+
+        // Send email if mailSender is available
+        if (mailSender != null) {
+            try {
+                org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
+                message.setTo(existingEmail);
+                message.setSubject("Email Removal Verification Code");
+                message.setText("Your verification code is: " + code + "\nIt will expire in 15 minutes.");
+                mailSender.send(message);
+            } catch (Exception e) {
+                System.out.println("Failed to send email removal verification email: " + e.getMessage());
+            }
+        }
+    }
+
+    public void removeRecoveryEmail(String username, String code) {
+        User user = getUserByUsername(username);
+
+        if (user.getVerificationCode() == null || !user.getVerificationCode().equals(code)) {
+            throw new IllegalArgumentException("Invalid verification code");
+        }
+
+        if (user.getCodeExpiryTime() == null || user.getCodeExpiryTime().isBefore(java.time.LocalDateTime.now())) {
+            throw new IllegalArgumentException("Verification code has expired");
+        }
+
+        user.setRecoveryEmail(null);
+        user.setVerificationCode(null);
+        user.setCodeExpiryTime(null);
+        userRepository.save(user);
+    }
+
     public User updateProfile(String currentUsername, UserUpdateDTO profileDTO) {
         User user = getUserByUsername(currentUsername);
 
@@ -326,6 +388,9 @@ public class UserService implements UserDetailsService {
         }
 
         if (profileDTO.getPassword() != null && !profileDTO.getPassword().trim().isEmpty()) {
+            if (profileDTO.getPassword().length() < 6) {
+                throw new IllegalArgumentException("Password must be at least 6 characters long");
+            }
             user.setPassword(passwordEncoder.encode(profileDTO.getPassword()));
         }
 

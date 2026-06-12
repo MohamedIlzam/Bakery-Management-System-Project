@@ -58,6 +58,7 @@ import com.example.KodikaraGroupBusinessManagementApplication.model.User;
 import com.example.KodikaraGroupBusinessManagementApplication.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -124,7 +125,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserDTO userDTO) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserDTO userDTO) {
         User createdUser = userService.registerUser(userDTO);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new MessageResponse("Account created for " + createdUser.getUsername() + " (pending owner approval)"));
