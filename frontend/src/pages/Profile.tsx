@@ -30,6 +30,12 @@ const Profile = () => {
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
+  // Email removal state
+  const [removeCodeSent, setRemoveCodeSent] = useState(false);
+  const [removeVerificationCode, setRemoveVerificationCode] = useState("");
+  const [isSendingRemoveCode, setIsSendingRemoveCode] = useState(false);
+  const [isRemovingEmail, setIsRemovingEmail] = useState(false);
+
   // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -188,6 +194,59 @@ const Profile = () => {
     }
   };
 
+  const handleSendRemoveCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSendingRemoveCode(true);
+    try {
+      await authService.sendEmailRemoveCode();
+      toast({
+        title: "Verification Code Sent",
+        description: "Verification code sent to your current recovery email",
+      });
+      setRemoveCodeSent(true);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to send verification code",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingRemoveCode(false);
+    }
+  };
+
+  const handleRemoveRecoveryEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!removeVerificationCode.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter the verification code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsRemovingEmail(true);
+    try {
+      await authService.removeRecoveryEmail(removeVerificationCode);
+      toast({
+        title: "Success",
+        description: "Recovery email has been removed successfully",
+      });
+      setRemoveCodeSent(false);
+      setRemoveVerificationCode("");
+      loadProfile();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Invalid or expired code",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRemovingEmail(false);
+    }
+  };
+
   const formatRole = (role: string) => {
     if (!role) return "";
     let cleanRole = role.replace(/^ROLE_/, "");
@@ -306,80 +365,152 @@ const Profile = () => {
               </CardContent>
             </Card>
 
-            {/* Recovery email change */}
-            <Card className="shadow-[var(--shadow-card)]">
-              <CardHeader>
-                <CardTitle className="text-lg text-bakery-brown flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-accent" /> Configure Recovery Email
-                </CardTitle>
-                <CardDescription>
-                  Adding a verified recovery email lets you reset your password if you forget it.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {!codeSent ? (
-                  <form onSubmit={handleSendEmailCode} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="newEmail">New Recovery Email</Label>
-                      <Input
-                        id="newEmail"
-                        type="email"
-                        placeholder="newemail@example.com"
-                        value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
-                        required
-                        disabled={isSendingCode}
-                      />
-                    </div>
-                    <Button type="submit" variant="outline" disabled={isSendingCode} className="w-full sm:w-auto flex items-center gap-2">
-                      {isSendingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
-                      Send Verification Code
-                    </Button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleVerifyEmailCode} className="space-y-4">
-                    <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-lg text-sm flex items-start gap-2.5">
-                      <CheckCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-                      <div>
-                        Verification code sent to <strong>{newEmail}</strong>. Please enter the code below to confirm and link this email.
+            {/* Recovery email change or remove */}
+            {profileData?.recoveryEmail ? (
+              <Card className="shadow-[var(--shadow-card)]">
+                <CardHeader>
+                  <CardTitle className="text-lg text-bakery-brown flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-destructive" /> Remove Recovery Email
+                  </CardTitle>
+                  <CardDescription>
+                    Removing your recovery email will disable password recovery until a new email is configured.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!removeCodeSent ? (
+                    <form onSubmit={handleSendRemoveCode} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Current Recovery Email</Label>
+                        <Input
+                          value={profileData.recoveryEmail}
+                          disabled
+                          className="bg-muted text-muted-foreground"
+                        />
                       </div>
-                    </div>
+                      <Button type="submit" variant="destructive" disabled={isSendingRemoveCode} className="w-full sm:w-auto flex items-center gap-2">
+                        {isSendingRemoveCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                        Send Removal Verification Code
+                      </Button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleRemoveRecoveryEmail} className="space-y-4">
+                      <div className="bg-red-50 border border-red-200 text-red-800 p-3 rounded-lg text-sm flex items-start gap-2.5">
+                        <CheckCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                        <div>
+                          Verification code sent to <strong>{profileData.recoveryEmail}</strong>. Please enter the code below to confirm removal.
+                        </div>
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="verificationCode">6-Digit Code</Label>
-                      <Input
-                        id="verificationCode"
-                        type="text"
-                        maxLength={6}
-                        placeholder="000000"
-                        className="text-center text-lg tracking-widest font-semibold"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        required
-                        disabled={isVerifyingCode}
-                      />
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Button type="submit" disabled={isVerifyingCode} className="flex-1">
-                        {isVerifyingCode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Confirm Code & Save
+                      <div className="space-y-2">
+                        <Label htmlFor="removeVerificationCode">6-Digit Code</Label>
+                        <Input
+                          id="removeVerificationCode"
+                          type="text"
+                          maxLength={6}
+                          placeholder="000000"
+                          className="text-center text-lg tracking-widest font-semibold"
+                          value={removeVerificationCode}
+                          onChange={(e) => setRemoveVerificationCode(e.target.value)}
+                          required
+                          disabled={isRemovingEmail}
+                        />
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button type="submit" variant="destructive" disabled={isRemovingEmail} className="flex-1">
+                          {isRemovingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Confirm Code & Remove
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            setRemoveCodeSent(false);
+                            setRemoveVerificationCode("");
+                          }}
+                          disabled={isRemovingEmail}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="shadow-[var(--shadow-card)]">
+                <CardHeader>
+                  <CardTitle className="text-lg text-bakery-brown flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-accent" /> Configure Recovery Email
+                  </CardTitle>
+                  <CardDescription>
+                    Adding a verified recovery email lets you reset your password if you forget it.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!codeSent ? (
+                    <form onSubmit={handleSendEmailCode} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="newEmail">New Recovery Email</Label>
+                        <Input
+                          id="newEmail"
+                          type="email"
+                          placeholder="newemail@example.com"
+                          value={newEmail}
+                          onChange={(e) => setNewEmail(e.target.value)}
+                          required
+                          disabled={isSendingCode}
+                        />
+                      </div>
+                      <Button type="submit" variant="outline" disabled={isSendingCode} className="w-full sm:w-auto flex items-center gap-2">
+                        {isSendingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                        Send Verification Code
                       </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          setCodeSent(false);
-                          setVerificationCode("");
-                        }}
-                        disabled={isVerifyingCode}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </form>
-                )}
-              </CardContent>
-            </Card>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleVerifyEmailCode} className="space-y-4">
+                      <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-lg text-sm flex items-start gap-2.5">
+                        <CheckCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                        <div>
+                          Verification code sent to <strong>{newEmail}</strong>. Please enter the code below to confirm and link this email.
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="verificationCode">6-Digit Code</Label>
+                        <Input
+                          id="verificationCode"
+                          type="text"
+                          maxLength={6}
+                          placeholder="000000"
+                          className="text-center text-lg tracking-widest font-semibold"
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value)}
+                          required
+                          disabled={isVerifyingCode}
+                        />
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button type="submit" disabled={isVerifyingCode} className="flex-1">
+                          {isVerifyingCode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Confirm Code & Save
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => {
+                            setCodeSent(false);
+                            setVerificationCode("");
+                          }}
+                          disabled={isVerifyingCode}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
