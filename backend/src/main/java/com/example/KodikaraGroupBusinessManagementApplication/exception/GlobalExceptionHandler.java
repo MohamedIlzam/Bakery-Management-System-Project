@@ -1,5 +1,6 @@
 package com.example.KodikaraGroupBusinessManagementApplication.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -56,6 +57,31 @@ public class GlobalExceptionHandler {
         body.put("message", ex.getMessage());
         // Return 404 Not Found
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
+    // Handles foreign key constraint / database integrity violations (e.g., deleting a referenced driver/vehicle)
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Object> handleDataIntegrityViolationException(DataIntegrityViolationException ex, WebRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "Conflict");
+        
+        String message = "Cannot delete this record because it is referenced by other data in the system.";
+        String description = request.getDescription(false); // e.g. "uri=/api/drivers/D001"
+        
+        if (description != null) {
+            if (description.contains("/api/drivers")) {
+                message = "Cannot delete this driver because they are assigned to existing delivery records or reports. Please delete or update those records first.";
+            } else if (description.contains("/api/vehicles")) {
+                message = "Cannot delete this vehicle because it is assigned to existing delivery records or reports. Please update or delete those records first.";
+            } else if (description.contains("/api/shops")) {
+                message = "Cannot delete this shop because it has associated delivery history. Please delete the delivery records for this shop first.";
+            } else if (description.contains("/api/products")) {
+                message = "Cannot delete this product because it has been used in sales or deliveries. You can mark it as inactive or soft-delete instead.";
+            }
+        }
+        
+        body.put("message", message);
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 
     // Optional: Generic handler for other unexpected errors
