@@ -21,7 +21,7 @@ public class Shop {
     @Column(name = "contact_details", length = 15, nullable = false)
     private String contactNo;
 
-    @Column(name = "location", length = 25, nullable = false)
+    @Column(name = "location", length = 100, nullable = false)
     private String address;
     public SaleDetail getSaleDetailBySaleId(String saleId) {
        return  new SaleDetail();

@@ -16,6 +16,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -36,12 +37,16 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:8081",
-                "http://localhost:8080",
-                "http://localhost:8082",
-                "http://localhost:5173",
-                "http://localhost:3000"));
+        String allowedOriginsStr = System.getenv("ALLOWED_ORIGINS");
+        List<String> allowedOrigins = allowedOriginsStr != null
+                ? Arrays.asList(allowedOriginsStr.split(","))
+                : Arrays.asList(
+                        "http://localhost:8081",
+                        "http://localhost:8080",
+                        "http://localhost:8082",
+                        "http://localhost:5173",
+                        "http://localhost:3000");
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept",
                 "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
@@ -62,6 +67,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public Endpoints
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         // Report Creation(only for owner/admin)
                         .requestMatchers("/api/fair-delivery-reports/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
                         .requestMatchers("/api/shop-supply-reports/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
