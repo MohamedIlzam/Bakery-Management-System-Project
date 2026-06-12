@@ -125,25 +125,30 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-bakery-cream to-bakery-warm">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-border shadow-[var(--shadow-soft)]">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center">
-              <Croissant className="h-5 w-5 text-primary-foreground" />
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-border shadow-[var(--shadow-soft)] sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center shrink-0">
+              <Croissant className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-bakery-brown">Kodikara Bake House</h1>
-              <p className="text-sm text-muted-foreground">Welcome, {username} </p>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold text-bakery-brown tracking-tight truncate">
+                Kodikara Bake House
+              </h1>
+              <p className="text-[11px] sm:text-xs md:text-sm text-muted-foreground truncate font-medium">
+                Welcome, {username}
+              </p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
             {['ROLE_OWNER', 'ADMIN'].includes(userRole || '') && (
               <Popover open={openNotifications} onOpenChange={setOpenNotifications}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="icon" className="relative mr-1">
+                  <Button variant="outline" size="icon" className="relative h-9 w-9 sm:h-10 sm:w-10 rounded-full border-border bg-white hover:bg-muted transition-colors shadow-sm">
                     <Bell className="h-4 w-4 text-bakery-brown" />
                     {pendingUsers.length > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse">
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground animate-pulse border border-white">
                         {pendingUsers.length}
                       </span>
                     )}
@@ -209,18 +214,20 @@ const Dashboard = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate("/profile")}
-              className="flex items-center space-x-2"
+              className="flex items-center justify-center h-9 w-9 p-0 rounded-full border-border bg-white hover:bg-muted transition-colors shadow-sm sm:w-auto sm:h-10 sm:px-4 sm:py-2 sm:rounded-lg sm:space-x-2"
+              title="Profile"
             >
-              <User className="h-4 w-4" />
-              <span>Profile</span>
+              <User className="h-4 w-4 text-bakery-brown" />
+              <span className="hidden sm:inline text-sm font-medium">Profile</span>
             </Button>
             <Button 
               variant="outline" 
               onClick={handleLogout}
-              className="flex items-center space-x-2 hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors"
+              className="flex items-center justify-center h-9 w-9 p-0 rounded-full border-border bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors shadow-sm sm:w-auto sm:h-10 sm:px-4 sm:py-2 sm:rounded-lg sm:space-x-2 sm:hover:bg-destructive sm:hover:text-destructive-foreground sm:hover:border-destructive"
+              title="Logout"
             >
               <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <span className="hidden sm:inline text-sm font-medium">Logout</span>
             </Button>
           </div>
         </div>
