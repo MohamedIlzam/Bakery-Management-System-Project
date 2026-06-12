@@ -67,6 +67,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public Endpoints
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         // Report Creation(only for owner/admin)
                         .requestMatchers("/api/fair-delivery-reports/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
                         .requestMatchers("/api/shop-supply-reports/**").hasAnyAuthority("ROLE_OWNER", "ADMIN")
